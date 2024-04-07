@@ -1,0 +1,117 @@
+[tool.black]
+line-length = 120
+python_version='3.11'
+target-version = ['py311']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | migrations
+  | static
+  | __pycache__
+  | venv
+  | virtualenv
+  | env
+  | develop
+  | frontend
+  | templates
+)/
+'''
+
+
+[tool.isort]
+py_version=311
+profile = 'black'
+line_length = 120
+skip = ['migrations/*.py', 'venv', 'env', 'apps/lib/lib_typing.py']
+src_paths = ['migrations', 'venv', 'env']
+known_standard_library='typing'
+known_django="django"
+sections = ['FUTURE', 'STDLIB', 'DJANGO', 'THIRDPARTY',  'FIRSTPARTY', 'LOCALFOLDER']
+multi_line_output = 3
+use_parentheses = true
+case_sensitive = true
+include_trailing_comma = true
+force_grid_wrap = 0
+combine_as_imports = true
+no_lines_before = 'LOCALFOLDER'
+force_single_line = true
+
+
+[tool.mypy]
+ignore_missing_imports = true  # error: Skipping analyzing "wfm_admin.utils": module is installed, but missing library stubs or py.typed marker  [import]
+no_strict_optional = false
+python_version='3.11'
+check_untyped_defs = true
+warn_no_return = false # error: Missing return statement  [return]
+warn_unreachable = false # error: Statement is unreachable  [unreachable]
+allow_redefinition = true
+show_error_context = false
+show_column_numbers = true
+error_summary = true
+pretty = false
+implicit_optional = true
+show_absolute_path = true
+#follow_imports = "silent"
+warn_redundant_casts = true
+explicit_package_bases = true
+
+disable_error_code = [
+    "var-annotated",
+    "import-untyped"
+]
+
+exclude = [
+    "tests",
+    "test",
+    "migrations",
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "mypy_django_plugin.main",
+    "mypy_drf_plugin.main"
+]
+
+[tool.django-stubs]
+django_settings_module = "wfm.settings"
+
+
+[tool.autoflake]
+
+[tool.vulture]
+exclude = ["tests"]
+ignore_decorators = []
+ignore_names = []
+make_whitelist = true
+min_confidence = 60
+paths = ['apps/reports/report_worker']
+sort_by_size = true
+#verbose = true
+
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+tests = []
+skips = ["B101"]
+
+
+[tool.autopep8]
+max_line_length = 120
+ignore = [
+    "E203", # Конфликт с black
+    "E501", # Конфликт с black
+]
+in-place = true
+recursive = true
+aggressive = 3
+
+

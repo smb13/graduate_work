@@ -1,0 +1,95 @@
+---
+repos:
+-   repo: https://github.com/IamTheFij/docker-pre-commit
+    rev: v3.0.1
+    hooks:
+    -   id: docker-compose-check
+-   repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
+    rev: 0.2.3
+    hooks:
+    -   id: yamlfmt
+        args: [--mapping, '2', --sequence, '4', --offset, '0', --colons, --width, '150']
+-   repo: https://github.com/adamchainz/django-upgrade
+    rev: 1.14.1
+    hooks:
+    -   id: django-upgrade
+        args: [--target-version, '4.2']
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+    -   id: check-ast
+    -   id: check-toml
+    -   id: check-yaml
+    -   id: check-json
+    -   id: check-case-conflict
+    -   id: check-merge-conflict
+    -   id: fix-byte-order-marker
+-   repo: https://github.com/asottile/pyupgrade
+    rev: v3.10.1
+    hooks:
+    -   id: pyupgrade
+        args: [--py311-plus]
+        language_version: python3.11
+-   repo: https://github.com/ikamensh/flynt/
+    rev: 1.0.1
+    hooks:
+    -   id: flynt
+-   repo: https://github.com/pre-commit/mirrors-autopep8
+    rev: v2.0.4
+    hooks:
+    -   id: autopep8
+        language_version: python3.11
+-   repo: https://github.com/dannysepler/rm_unneeded_f_str
+    rev: v0.2.0
+    hooks:
+    -   id: rm-unneeded-f-str
+        language_version: python3.11
+-   repo: https://github.com/PyCQA/autoflake
+    rev: v2.2.0
+    hooks:
+    -   id: autoflake
+        args: [--in-place, --remove-all-unused-imports, --ignore-init-module-imports, --remove-duplicate-keys, --remove-unused-variables]
+        language_version: python3.11
+-   repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+    -   id: isort
+        name: isort (python)
+        args: [--resolve-all-configs]
+        language_version: python3.11
+-   repo: https://github.com/asottile/add-trailing-comma
+    rev: v3.0.1
+    hooks:
+    -   id: add-trailing-comma
+        language_version: python3.11
+-   repo: https://github.com/psf/black
+    rev: 23.7.0
+    hooks:
+    -   id: black
+        language_version: python3.11
+-   repo: https://github.com/PyCQA/flake8
+    rev: 6.1.0
+    hooks:
+    -   id: flake8
+        name: flake8-attributes-order
+        verbose: true
+        additional_dependencies: [flake8-class-attributes-order]
+        args: [--isolated, --select=CCE, --count, --statistics, --exit-zero, --class-attributes-order, __new__, __init__, __post_init__, constant, outer_field,
+          field, __str__, magic_method, save, delete, meta_class, nested_class, private_property_method, property_method, private_static_method, static_method,
+          private_class_method, class_method, private_method, method]
+-   repo: https://github.com/PyCQA/flake8
+    rev: 6.1.0
+    hooks:
+    -   id: flake8
+        additional_dependencies: [flake8-annotations, flake8-eradicate, flake8-django, flake8-absolute-import, flake8-black, flake8-bugbear, flake8-builtins,
+          flake8-commas, flake8-isort, flake8-pie, flake8-plugin-utils, flake8-polyfill, flake8-print, flake8-printf-formatting, flake8-pytest, flake8-pytest-style,
+          flake8-quotes, flake8-tidy-imports, flake8-variables-names, flake8-annotations, flake8-comprehensions, flake8-implicit-str-concat, flake8-pyi,
+          flake8-raise, flake8-simplify, flake8-tidy-imports, flake8-type-checking, flake8-black, flake8-datetime-import, flake8-return]
+        args: [--count, --statistics]
+        language_version: python3.11
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.9.0
+    hooks:
+    -   id: mypy
+        types: [python]
+        args: [--config-file=./pyproject.toml]
