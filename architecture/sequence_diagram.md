@@ -56,7 +56,9 @@ sequenceDiagram
     SubAPI->>BillAPI: Данные подписки сохранены
     BillAPI->>BillDB: Статус оплаты Применена
     BillDB->>BillAPI: Статус оплаты сохранён
-    
+    BillAPI->>Events: Событие Оплата произведена
+    Events->>BillAPI: Событие получено
+    BillAPI->>YooKassa: Результат принят
 ```
 ## Отмена подписки
 ```mermaid
