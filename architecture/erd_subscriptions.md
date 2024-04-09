@@ -14,6 +14,7 @@ erDiagram
     
     user-subscription["User Subscription"] {
         uuid id PK
+        uuid payment_method_id "ID автоплатежа"
         uuid type FK "Тип подписки" 
         uuid user FK "Пользователь"
     }
