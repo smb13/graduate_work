@@ -1,5 +1,29 @@
 # Проектная работа: Биллинг
 
+## Архитектура
+
+### Требования
+* [requirements.md](architecture%2Frequirements.md)
+
+### Схема 
+* [solution_architecture_billing.md](architecture%2Fsolution_architecture_billing.md)
+
+### API эндпойнты
+* [api_endpoints.md](architecture%2Fapi_endpoints.md)
+
+### Схемы данных
+* [erd_billing.md](architecture%2Ferd_billing.md)
+* [erd_subscriptions.md](architecture%2Ferd_subscriptions.md)
+
+### Диаграммы последовательностей
+* [get_user_subscriptions.md](architecture%2Fsequence_diagrams%2Fget_user_subscriptions.md)
+* [get_user_payments.md](architecture%2Fsequence_diagrams%2Fget_user_payments.md)
+* [subscription_types.md](architecture%2Fsequence_diagrams%2Fsubscription_types.md)
+* [subscription_new.md](architecture%2Fsequence_diagrams%2Fsubscription_new.md)
+* [subscription_renewal.md](architecture%2Fsequence_diagrams%2Fsubscription_renewal.md)
+* [subscription_cancel.md](architecture%2Fsequence_diagrams%2Fsubscription_cancel.md)
+* [others.md](architecture%2Fsequence_diagrams%2Fothers.md)
+
 ## Подготовка к запуску
 
 Все сервисы добавлены в один docker-compose файл docker-compose-dev.yml
