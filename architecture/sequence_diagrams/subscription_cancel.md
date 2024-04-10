@@ -12,7 +12,7 @@ sequenceDiagram
         participant BillDB as Database
     end
     participant YooKassa as ЮKassa
-    participant Events as Events Service
+    participant EPKAPI as EPK API
 
     User->>SubAPI: Отменить подписку X
     Note right of User: DELETE /api/v1/me/user-subscriptions/<id>
@@ -29,6 +29,8 @@ sequenceDiagram
         YooKassa->>BillAPI: Возврат оформлен 
         BillAPI->>BillDB: Записать возврат в историю
         BillDB->>BillAPI: Возврат сохранён
+        BillAPI->>EPKAPI: Событие Возврат произведён
+        EPKAPI->>BillAPI: Событие получено
     else Прошло больше недели но осталось больше месяца
         SubAPI->>SubAPI: Рассчитать сумму возврата
         SubAPI->>BillAPI: Частичный возврат
@@ -47,5 +49,7 @@ sequenceDiagram
     Note right of SubAPI: Удаляем способ оплаты для подписки
     Note right of SubAPI: Устанавливаем завершение подписки
     SubDB->>SubAPI: Подписка обновлена
+    SubAPI->>EPKAPI: Событие Подписка отменена
+    EPKAPI->>SubAPI: Событие получено
     SubAPI->>User: Подписка X отменена
 ```

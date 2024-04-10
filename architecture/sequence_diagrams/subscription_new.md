@@ -13,7 +13,7 @@ sequenceDiagram
         participant BillDB as Database
     end
     participant YooKassa as ЮKassa
-    participant Events as Events Service
+    participant EPKAPI as EPK API
 
     User->>SubAPI: Купить подписку X за Y
     Note right of User: POST /api/v1/me/user-subscriptions
@@ -53,6 +53,6 @@ sequenceDiagram
     SubAPI->>BillBGround: Данные подписки сохранены
     BillBGround->>BillDB: Статус оплаты Применена
     BillDB->>BillBGround: Статус оплаты сохранён
-    BillBGround->>Events: Событие Оплата произведена
-    Events->>BillBGround: Событие получено
+    BillBGround->>EPKAPI: Событие Оплата произведена
+    EPKAPI->>BillBGround: Событие получено
 ```
