@@ -13,7 +13,7 @@ sequenceDiagram
         participant BillApp as Script
         participant BillDB as Database
     end
-    participant Events as Events Service
+    participant EPKAPI as EPK API
     Cron->>SubApp: Продлить подписку X
     Note right of Cron: Запустить скрипт автопродления
     SubApp->>SubDB: Получить истёкшие подписки 
@@ -61,9 +61,9 @@ sequenceDiagram
         SubAPI->>BillApp: Данные подписки сохранены
         BillApp->>BillDB: Статус оплаты Применена
         BillDB->>BillApp: Статус оплаты сохранён
-        BillApp->>Events: Событие Оплата произведена
-        Events->>BillApp: Событие получено
-        BillApp->>Events: Событие Подписка продлена
-        Events->>BillApp: Событие получено
+        BillApp->>EPKAPI: Событие Оплата произведена
+        EPKAPI->>BillApp: Событие получено
+        BillApp->>EPKAPI: Событие Подписка продлена
+        EPKAPI->>BillApp: Событие получено
     end
 ```
