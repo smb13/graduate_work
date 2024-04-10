@@ -14,16 +14,11 @@ erDiagram
     
     user-subscription["User Subscription"] {
         uuid id PK
-        uuid payment_method_id "ID автоплатежа"
-        uuid type FK "Тип подписки" 
-        uuid user FK "Пользователь"
-    }
-
-    user[User] {
-        uuid id PK
+        uuid type FK "Тип подписки"
+        uuid user_id "Пользователь"
+        uuid payment_method_id "ID автоплатежа" 
     }
 
     user-subscription }o--|| subscription-type : "оформлена"
-    user-subscription }o--|| user : "подписан"
 
 ```
