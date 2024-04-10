@@ -1,0 +1,127 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-09-02 20:13+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: movies/apps.py:8
+msgid "movies"
+msgstr ""
+
+#: movies/choices.py:6
+msgid "movie"
+msgstr ""
+
+#: movies/choices.py:7
+msgid "tv_show"
+msgstr "TV show"
+
+#: movies/choices.py:11
+msgid "actor"
+msgstr ""
+
+#: movies/choices.py:12
+msgid "director"
+msgstr ""
+
+#: movies/choices.py:13
+msgid "writer"
+msgstr ""
+
+#: movies/models/common.py:8
+msgid "created"
+msgstr ""
+
+#: movies/models/common.py:9
+msgid "modified"
+msgstr ""
+
+#: movies/models/filmwork.py:13 movies/models/genre.py:22
+msgid "genres"
+msgstr ""
+
+#: movies/models/filmwork.py:18 movies/models/person.py:15
+msgid "persons"
+msgstr ""
+
+#: movies/models/filmwork.py:21
+msgid "title"
+msgstr ""
+
+#: movies/models/filmwork.py:23 movies/models/genre.py:11
+msgid "description"
+msgstr ""
+
+#: movies/models/filmwork.py:30
+msgid "creation_date"
+msgstr "creation date"
+
+#: movies/models/filmwork.py:32
+msgid "rating"
+msgstr ""
+
+#: movies/models/filmwork.py:40
+msgid "type"
+msgstr ""
+
+#: movies/models/filmwork.py:41
+msgid "file"
+msgstr ""
+
+#: movies/models/filmwork.py:51
+msgid "film_work"
+msgstr "film work"
+
+#: movies/models/filmwork.py:52
+msgid "film_works"
+msgstr "film works"
+
+#: movies/models/genre.py:9
+msgid "name"
+msgstr ""
+
+#: movies/models/genre.py:21 movies/models/genre.py:33
+msgid "genre"
+msgstr ""
+
+#: movies/models/genre.py:42
+msgid "genre_film_work"
+msgstr "film work genre"
+
+#: movies/models/genre.py:43
+msgid "genre_film_works"
+msgstr "film work genres"
+
+#: movies/models/person.py:10
+msgid "full_name"
+msgstr "full name"
+
+#: movies/models/person.py:14 movies/models/person.py:26
+msgid "person"
+msgstr ""
+
+#: movies/models/person.py:29
+msgid "role"
+msgstr ""
+
+#: movies/models/person.py:43
+msgid "person_film_work"
+msgstr "film work person"
+
+#: movies/models/person.py:44
+msgid "person_film_works"
+msgstr "film work persons"

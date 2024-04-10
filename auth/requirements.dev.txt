@@ -1,0 +1,7 @@
+pytest==7.4.2
+pytest-asyncio==0.21.1
+
+httpx==0.25.0
+Faker==23.1.0
+ipython==8.17.2
+freezegun==1.4.0

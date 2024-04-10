@@ -1,0 +1,86 @@
+---
+version : '3.9'
+
+services:
+  rabbitmq:
+    image: rabbitmq:management
+    env_file:
+    -   .env
+    ports:
+    -   5672:5672
+    -   15672:15672
+    healthcheck:
+      test: rabbitmq-diagnostics -q status && rabbitmq-diagnostics -q check_local_alarms
+      interval: 60s
+      timeout: 30s
+      retries: 3
+
+  epk_api:
+    build:
+      context: ./epk_api
+      dockerfile: ./Dockerfile
+    restart: always
+    env_file:
+    -   .env
+    ports:
+    -   8001:8000
+    healthcheck:
+      test: [CMD-SHELL, curl -sS http://127.0.0.1:8000/health_check/v1 || exit 1]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  worker_1:
+    build:
+      context: ./worker
+      dockerfile: ./Dockerfile
+    restart: always
+    env_file:
+    -   .env
+    environment:
+    -   RABBITMQ_CONSUME_QUEUE=email.general_notice
+    depends_on:
+      epk_api:
+        condition: service_healthy
+
+  worker_2:
+    build:
+      context: ./worker
+      dockerfile: ./Dockerfile
+    restart: always
+    env_file:
+    -   .env
+    environment:
+    -   RABBITMQ_CONSUME_QUEUE=email.weekly_bookmarks
+    depends_on:
+      epk_api:
+        condition: service_healthy
+
+  worker_3:
+    build:
+      context: ./worker
+      dockerfile: ./Dockerfile
+    restart: always
+    env_file:
+    -   .env
+    environment:
+    -   RABBITMQ_CONSUME_QUEUE=push.general_notice
+    depends_on:
+      epk_api:
+        condition: service_healthy
+
+  worker_4:
+    build:
+      context: ./worker
+      dockerfile: ./Dockerfile
+    restart: always
+    env_file:
+    -   .env
+    environment:
+    -   RABBITMQ_CONSUME_QUEUE=push.review_like
+    depends_on:
+      epk_api:
+        condition: service_healthy

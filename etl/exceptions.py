@@ -1,0 +1,2 @@
+class ElasticError(ValueError):
+    pass
