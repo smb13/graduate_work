@@ -1,0 +1,13 @@
+---
+version : '3.9'
+
+
+services:
+  tests:
+    build:
+      context: ./tests/functional
+    env_file:
+    -   .env
+    depends_on:
+    -   external_dev
+    command: bash -c "pytest"

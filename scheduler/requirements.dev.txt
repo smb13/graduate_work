@@ -1,0 +1,5 @@
+pytest==7.4.0
+pytest-django==4.8.0
+faker==24.4.0
+model-bakery==1.17.0
+freezegun==1.4.0

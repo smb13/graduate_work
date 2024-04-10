@@ -1,0 +1,41 @@
+---
+version      : '3.9'
+
+x-base-worker: &base-worker
+  build:
+    context: ./worker
+    dockerfile: ./Dockerfile
+    network: host
+
+
+services     :
+  epk_api:
+    build:
+      context: ./epk_api
+      dockerfile: ./Dockerfile
+      network: host
+    healthcheck:
+      test: [CMD-SHELL, curl -sS http://127.0.0.1:8000/health_check/v1 || exit 1]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  worker_email_general_notice:
+    <<: *base-worker
+    environment:
+    -   RABBITMQ_CONSUME_QUEUE=email.general_notice
+
+  worker_email_weekly_bookmarks:
+    <<: *base-worker
+    environment:
+    -   RABBITMQ_CONSUME_QUEUE=email.weekly_bookmarks
+
+  worker_push_general_notice:
+    <<: *base-worker
+    environment:
+    -   RABBITMQ_CONSUME_QUEUE=push.general_notice
+
+  worker_push_review_like:
+    <<: *base-worker
+    environment:
+    -   RABBITMQ_CONSUME_QUEUE=push.review_like

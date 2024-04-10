@@ -1,0 +1,85 @@
+---
+name: Pull request CI
+
+on  :
+  pull_request:
+    branches:
+    -   main
+
+jobs:
+  lint-and-type-check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11']
+
+    steps:
+    -   uses: actions/checkout@v3
+
+    -   name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+    -   name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install mypy flake8-html
+    -   name: Run flake8 linter
+        run: |
+          flake8 . --config=./tox.ini --format=html --htmldir=flake-report
+    -   name: Run mypy (Type check)
+        run: |
+          mypy --config-file=pyproject.toml .
+
+  tests:
+    if: success()
+    needs: lint-and-type-check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11']
+
+    steps:
+    -   uses: actions/checkout@v3
+
+    -   name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+    -   name: Make .env file
+        run: |
+          echo POSTGRES_USER=${{ secrets.POSTGRES_USER }} > .env
+          echo POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} >> .env
+          echo POSTGRES_MOVIES_DB=${{ secrets.POSTGRES_MOVIES_DB }} >> .env
+          echo POSTGRES_AUTH_DB=${{ secrets.POSTGRES_AUTH_DB }} >> .env
+          echo POSTGRES_PORT=${{ secrets.POSTGRES_PORT }} >> .env
+          echo REDIS_PORT=${{ secrets.REDIS_PORT }} >> .env
+          echo REDIS_DB_MOVIES=${{ secrets.REDIS_DB_MOVIES }} >> .env
+          echo REDIS_DB_AUTH=${{ secrets.REDIS_DB_AUTH }} >> .env
+          echo REDIS_DB_ETL=${{ secrets.REDIS_DB_ETL }} >> .env
+          echo DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }} >> .env
+          echo LOCAL_USER=${{ secrets.LOCAL_USER }} >> .env
+          echo LOCAL_USER_EMAIL=${{ secrets.LOCAL_USER_EMAIL }} >> .env
+          echo LOCAL_USER_PASSWORD=${{ secrets.LOCAL_USER_PASSWORD }} >> .env
+          echo JWT_ACCESS_TOKEN_EXPIRES_MINUTES=${{ secrets.JWT_ACCESS_TOKEN_EXPIRES_MINUTES }} >> .env
+          echo JWT_ACCESS_TOKEN_SECRET_KEY=${{ secrets.JWT_ACCESS_TOKEN_SECRET_KEY }} >> .env
+          echo JWT_REFRESH_TOKEN_SECRET_KEY=${{ secrets.JWT_REFRESH_TOKEN_SECRET_KEY }} >> .env
+
+    -   name: Run tests
+        run: |
+          make first_start_tests
+
+  notify:
+    if: success()
+    needs: [lint-and-type-check, tests]
+    runs-on: ubuntu-latest
+    steps:
+    -   uses: actions/checkout@v2
+
+    -   name: Send success notification to Telegram
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: 'CI Pipeline Success: ${{ github.repository }} at ${{ github.sha }}'

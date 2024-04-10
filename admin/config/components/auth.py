@@ -1,0 +1,32 @@
+from config.components.base import env
+
+# Password validation
+# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
+
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
+]
+
+AUTH_USER_MODEL = "users.User"
+
+AUTHENTICATION_BACKENDS = [
+    "users.auth.CustomBackend",
+]
+
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_AGE = 60 * 60 * 24
+
+JWT_ACCESS_TOKEN_SECRET_KEY = env("JWT_ACCESS_TOKEN_SECRET_KEY", cast=str, default="movies_token_secret")
+
+SERVICE_AUTH_API_BASE_PATH = env("SERVICE_AUTH_API_BASE_PATH", cast=str, default="http://auth:8000/api/v1")

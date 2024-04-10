@@ -1,0 +1,165 @@
+---
+version : '3.9'
+
+
+services:
+  external:  # External API for production
+    build:
+      context: ./external
+    restart: always
+    env_file:
+    -   .env
+    environment:
+      PORT: 8000
+      OTEL_SERVICE_NAME: movies-api
+    depends_on:
+      elastic:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  auth:  # auth API for production
+    build:
+      context: ./auth
+    restart: always
+    env_file:
+    -   .env
+    environment:
+      PORT: 8000
+      OTEL_SERVICE_NAME: auth-service
+    depends_on:
+      redis_auth:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  admin:  # Admin for production
+    build:
+      context: ./admin
+      dockerfile: ./Dockerfile
+    restart: always
+    env_file:
+    -   .env
+    depends_on:
+    -   postgres
+    volumes:
+    -   admin_data:/src/app/data
+
+  nginx:  # For production
+    image: nginx:1.25.2
+    volumes:
+    -   type: volume
+        source: admin_data
+        target: /data
+        volume:
+          nocopy: true
+        read_only: true
+    -   ./nginx.conf:/etc/nginx/nginx.conf:ro
+    -   ./configs:/etc/nginx/conf.d:ro
+    environment:
+      TZ: Europe/Moscow
+    ports:
+    -   8888:8888
+    depends_on:
+    -   admin
+    -   auth
+    -   external
+    -   jaeger
+
+  nginx_proxy:  # For production
+    image: nginx:1.25.2
+    volumes:
+    -   ./nginx_proxy.conf:/etc/nginx/nginx.conf:ro
+    environment:
+      TZ: Europe/Moscow
+    network_mode: host
+    depends_on:
+    -   nginx
+
+  etl:
+    build:
+      context: etl
+      dockerfile: ./Dockerfile
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elastic:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+    -   .env
+    volumes:
+    -   ./etl/:/src/app/
+
+  postgres:
+    restart: always
+    image: postgres:13-alpine
+    volumes:
+    -   ./db_dump:/etc/db_dump/
+    -   postgres_db:/var/lib/postgresql/data
+    env_file:
+    -   .env
+    healthcheck:
+      test: psql -U $POSTGRES_USER -d postgres -c "SELECT 1;"
+      start_period: 5s
+      interval: 2s
+      timeout: 1s
+      retries: 3
+
+  elastic:
+    restart: always
+    image: elasticsearch:8.6.2
+    volumes:
+    -   esdata:/usr/share/elasticsearch/data
+    environment:
+      ES_JAVA_OPTS: -Xms1000m -Xmx1000m
+      discovery.type: single-node
+      xpack.security.enabled: false
+      cluster.routing.allocation.disk.threshold_enabled: false
+    healthcheck:
+      test: curl -f http://localhost:9200/_cluster/health
+      start_period: 10s
+      interval: 5s
+      timeout: 1s
+      retries: 10
+
+  redis:
+    image: redis:7.2.0-alpine
+    volumes:
+    -   redis_data:/data
+    expose:
+    -   ${REDIS_PORT}
+    healthcheck:
+      test: redis-cli -c "PING"
+      start_period: 5s
+      interval: 2s
+      timeout: 1s
+      retries: 3
+
+  redis_auth:
+    image: redis:7.2.0-alpine
+    volumes:
+    -   redis_data:/data
+    expose:
+    -   ${REDIS_PORT}
+    healthcheck:
+      test: redis-cli -c "PING"
+      start_period: 5s
+      interval: 2s
+      timeout: 1s
+      retries: 3
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+    -   6831:6831/udp
+    environment:
+      QUERY_BASE_PATH: /jaeger
+
+volumes :
+  postgres_db:
+  esdata:
+  redis_data:
+  admin_data:
