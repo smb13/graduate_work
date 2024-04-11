@@ -19,13 +19,13 @@ help: # Вывод информации make командах
 
 first_start: postgres db_create admin_migrate redis redis_auth elastic etl prod auth_migrations auth_createsuperuser
 
-first_start_dev: postgres_dev db_create db_restore redis_dev redis_auth_dev flush_redis_dev elastic_dev clear_elastic_index_dev etl_dev dev auth_createsuperuser_dev
+first_start_dev: postgres_dev db_create db_restore redis_dev flush_redis_dev elastic_dev clear_elastic_index_dev etl_dev dev auth_createsuperuser_dev
 
 start: prod auth_migrations
 
 # Tests
 
-first_start_tests: postgres_dev db_create db_restore redis_dev redis_auth_dev flush_redis_dev elastic_dev clear_elastic_index_dev etl_dev tests
+first_start_tests: postgres_dev db_create db_restore redis_dev flush_redis_dev elastic_dev clear_elastic_index_dev etl_dev tests
 
 tests:
 	docker compose $(DOCKER_COMPOSE_TESTS) up --build --attach tests
