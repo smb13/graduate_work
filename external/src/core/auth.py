@@ -20,7 +20,7 @@ class SystemRolesEnum(str, Enum):
 
 class JWTTokenPayload(BaseModel):
     iat: int
-    sub: str
+    sub: uuid.UUID
     exp: int
 
     jti: str | None = None
@@ -29,12 +29,6 @@ class JWTTokenPayload(BaseModel):
     @property
     def expires_at(self) -> dt.datetime:
         return dt.datetime.fromtimestamp(self.exp)
-
-    @property
-    def username(self) -> str:
-        if not self.sub.startswith("username:"):
-            return ""
-        return self.sub[len("username:") :]
 
     @property
     def issued_at(self) -> dt.datetime:

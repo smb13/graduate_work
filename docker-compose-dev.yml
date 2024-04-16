@@ -261,7 +261,6 @@ services        :
       service: jaeger
 
   mongo:
-    container_name: mongo
     image: mongo
     volumes:
     -   mongo_db:/data/db

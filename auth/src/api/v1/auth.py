@@ -87,7 +87,7 @@ async def revoke_token(
 
     if access_token:
         access_token_payload = await auth_service.check_access_token_signature(access_token)
-        user = await users_service.retrieve(username=access_token_payload and access_token_payload.username)
+        user = await users_service.retrieve(user_id=access_token_payload and access_token_payload.sub)
         is_valid = await auth_service.check_access_token(access_token_payload, access_token)
 
         if not access_token_payload or not is_valid or not user or user.id != current_user.id:
@@ -97,7 +97,7 @@ async def revoke_token(
 
     if refresh_token:
         refresh_token_payload = await auth_service.check_refresh_token_signature(refresh_token)
-        user = await users_service.retrieve(username=refresh_token_payload and refresh_token_payload.username)
+        user = await users_service.retrieve(user_id=refresh_token_payload and refresh_token_payload.sub)
         is_valid = await auth_service.check_refresh_token_payload(refresh_token_payload, user and user.id)
 
         if not refresh_token_payload or not is_valid or not user or user.id != current_user.id:
@@ -120,7 +120,7 @@ async def refresh(
     """Refresh token."""
 
     payload = await auth_service.check_refresh_token_signature(refresh_token)
-    user = await user_service.retrieve(username=payload and payload.username)
+    user = await user_service.retrieve(user_id=payload and payload.sub)
     is_valid = await auth_service.check_refresh_token_payload(payload, user and user.id)
 
     if not payload or not is_valid or not user:

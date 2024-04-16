@@ -3,9 +3,9 @@ import hashlib
 import hmac
 import uuid
 from base64 import urlsafe_b64decode, urlsafe_b64encode
-from collections.abc import Callable, Coroutine, Sequence
+from collections.abc import Callable, Sequence
 from functools import lru_cache
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
@@ -38,7 +38,7 @@ class AuthService(BaseService):
     @staticmethod
     async def make_access_token(user: User, role_codes: Sequence[str]) -> str:
         token, _ = await generate_jwt_signed_token(
-            data={"sub": f"username:{user.login}", "roles": role_codes},
+            data={"sub": str(user.id), "roles": role_codes},
             expires_minutes=settings.jwt_access_token_expires_minutes,
             secret_key=settings.jwt_access_token_secret_key,
         )
@@ -47,7 +47,7 @@ class AuthService(BaseService):
     async def make_refresh_token(self, user: User) -> str:
         jti = uuid.uuid4()
         refresh_token, exp = await generate_jwt_signed_token(
-            data={"sub": f"username:{user.login}", "jti": str(jti)},
+            data={"sub": str(user.id), "jti": str(jti)},
             expires_minutes=settings.jwt_refresh_token_expires_minutes,
             secret_key=settings.jwt_refresh_token_secret_key,
         )
@@ -198,9 +198,9 @@ async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     users_service: UsersService = Depends(get_users_service),
     auth_service: AuthService = Depends(get_auth_service),
-) -> Coroutine[Any, Any, User]:
+) -> User:
     payload = await auth_service.check_access_token_signature(token)
-    user = await users_service.retrieve(username=payload and payload.username)
+    user = await users_service.retrieve(user_id=payload and payload.sub)
     is_valid = await auth_service.check_access_token(payload, token)
 
     if not user or not is_valid:

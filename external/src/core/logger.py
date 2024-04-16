@@ -17,8 +17,8 @@ if SENTRY_DSN := os.getenv("SENTRY_DSN"):
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         integrations=[sentry_logging],
-        traces_sample_rate=1.0,
-        profiles_sample_rate=1.0,
+        traces_sample_rate=float(os.getenv("TRACES_SAMPLE_RATE", 0.01)),
+        profiles_sample_rate=float(os.getenv("PROFILES_SAMPLE_RATE", 0.01)),
     )
 
 # В логгере настраивается логгирование uvicorn-сервера.
