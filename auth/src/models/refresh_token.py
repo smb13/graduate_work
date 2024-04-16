@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from db.alchemy import Base
 
 if TYPE_CHECKING:
-    from models.user import User
+    from models import User
 
 
 class RefreshToken(Base):

@@ -1,19 +1,24 @@
 import http
-import logging
 import uuid
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import BaseBackend
 from django.core.exceptions import PermissionDenied
 from django.core.handlers.wsgi import WSGIRequest
+from django.core.validators import validate_email
 from django.db.migrations.operations.base import Operation
 
 import jwt
 import requests
 
-User = get_user_model()
+if TYPE_CHECKING:
+    from users.models import User as UserModel
+
+
+User: "type[UserModel]" = get_user_model()
 
 
 class CustomBackend(BaseBackend):
@@ -21,16 +26,12 @@ class CustomBackend(BaseBackend):
     def _request_external_auth(
         method: Callable,
         url: str,
-        resp_status: int = http.HTTPStatus.OK,
         headers: dict | None = None,
         data: dict | None = None,
-        json: dict | None = None,
     ) -> dict | None:
-        """
-        Функция для отправки запросов в стороний auth сервис.
-        """
-        response: requests.Response = method(url=url, headers=headers, data=data, json=json)
-        if not response and response.status_code != resp_status:
+        """Отправка запросов в Auth сервис."""
+        response: requests.Response = method(url=url, headers=headers, data=data)
+        if not response and response.status_code != http.HTTPStatus.OK:
             return None
         return response.json()
 
@@ -68,50 +69,50 @@ class CustomBackend(BaseBackend):
         """
         Аутентифицирует пользователя и создает его в Django, если его нет в БД.
         """
-        url_login = f"{settings.SERVICE_AUTH_API_BASE_PATH}/auth/token"
+        validate_email(username)
+
+        login_url = f"{settings.SERVICE_AUTH_API_BASE_PATH}/auth/token"
         payload_login = {"username": username, "password": password}
 
         access_token = self.__get_bearer_token(request)
 
         if not access_token:
-            response_login = self._request_external_auth(
+            oauth_tokens = self._request_external_auth(
                 requests.post,
-                url=url_login,
+                url=login_url,
                 data=payload_login,
-                resp_status=http.HTTPStatus.OK,
             )
-            if not response_login:
+            if not oauth_tokens:
                 raise PermissionDenied
 
-            logging.warning(f"{response_login=}")
-            access_token = response_login.get("access_token")
+            access_token = oauth_tokens.get("access_token")
+            if not access_token:
+                raise PermissionDenied
 
         payload = self.__decode_access_token(access_token)
+        if not payload:
+            raise PermissionDenied
 
-        url_user_info = f"{settings.SERVICE_AUTH_API_BASE_PATH}/account/details"
+        user_info_url = f"{settings.SERVICE_AUTH_API_BASE_PATH}/account/details"
         user_info = self._request_external_auth(
             requests.get,
-            url=url_user_info,
-            resp_status=http.HTTPStatus.OK,
+            url=user_info_url,
             headers={"Authorization": f"Bearer {access_token}"},
         )
         if user_info:
-            try:
-                user, _ = User.objects.get_or_create(id=user_info.get("id"))
-                user.login = user_info.get("login")
-                user.first_name = user_info.get("first_name")
-                user.last_name = user_info.get("last_name")
-                if payload:
-                    roles = payload.get("roles")
-                    if roles:
-                        user.is_admin = "admin" in roles
-                else:
-                    user.is_admin = False
-                user.is_active = True
-                user.save()
-            except Exception as exc:
-                logging.exception(f"Except {repr(exc)}")
+            user, _ = User.objects.update_or_create(
+                id=user_info.get("id"),
+                defaults=dict(
+                    login=user_info.get("login"),
+                    first_name=user_info.get("first_name"),
+                    last_name=user_info.get("last_name"),
+                ),
+            )
 
-                return None
+            user.is_admin = "admin" in payload.get("roles", [])
+            user.is_active = True
+            user.save()
 
-        return user
+            return user
+
+        return None
