@@ -1,5 +1,7 @@
 faker==19.3.0
 pytest==7.4.0
+django-stubs[compatible-mypy]==4.2.7
+django-stubs-ext[compatible-mypy]==4.2.7
 django-silk==5.0.3
 django-debug-toolbar==4.2.0
 

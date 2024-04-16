@@ -170,7 +170,6 @@ services       :
       MONGO_DSN: mongo
 
   websocket-sender:
-    container_name: websocket-sender
     <<: *base-settings
     build:
       context: ./websocket_sender

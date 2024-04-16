@@ -12,7 +12,7 @@ class TokenResponse(BaseModel):
 
 class JWTTokenPayload(BaseModel):
     iat: int
-    sub: str
+    sub: uuid.UUID
     exp: int
 
     jti: str | None = None
@@ -25,16 +25,6 @@ class JWTTokenPayload(BaseModel):
     @expires_at.setter
     def expires_at(self, expires_at: dt.datetime) -> None:
         self.exp = int(expires_at.timestamp())
-
-    @property
-    def username(self) -> str:
-        if not self.sub.startswith("username:"):
-            return ""
-        return self.sub[len("username:") :]
-
-    @username.setter
-    def username(self, user_id: str) -> None:
-        self.sub = f"username:{user_id}"
 
     @property
     def issued_at(self) -> dt.datetime:
