@@ -10,7 +10,7 @@ from services.users import UsersService, get_users_service
 
 @lifespan(None)
 async def create_roles_and_admin(username: str, password: str) -> None:
-    async with alchemy.async_session() as session:
+    async with alchemy.AsyncSessionLocal() as session:
         users_service: UsersService = get_users_service(alchemy=session)
         roles_service: RolesService = get_roles_service(alchemy=session)
 

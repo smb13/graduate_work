@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 engine: "AsyncEngine | None" = None  # type: ignore
-async_session: sessionmaker | None = None
+AsyncSessionLocal: sessionmaker | None = None
 
 Base = declarative_base()
 Base.__doc__ = "Базовый класс для моделей"
@@ -26,5 +26,5 @@ async def purge_database() -> None:
 
 
 async def get_session() -> typing.AsyncGenerator[AsyncSession, None]:
-    async with async_session() as session:  # type: ignore
+    async with AsyncSessionLocal() as session:  # type: ignore
         yield session

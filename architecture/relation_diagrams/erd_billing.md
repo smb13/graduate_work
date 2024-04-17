@@ -8,14 +8,14 @@ erDiagram
         uuid payment_method_id "Идентификатор сохраненного способа оплаты"
         uuid refund_payment_id "Внешний ID платежа по которому возврат"
         uuid user_id "Пользователь"
-        string action "Действие (payment, refund)"
+        string kind "Вид транзакции (payment, refund)"
         string state "Состояние (pending, succeeded, canceled)" 
         string description "Назначение платежа (Подписка X)"
         decimal amount "Сумма платежа"
         datetime dt_created "Создано"
         datetime dt_changed "Изменено"
-        int attempt_cnt "Номер попытки"
-        int attempt_date "Дата последней попытки"
+        int cnt_attempts "Номер попытки"
+        datetime dt_last_attempt "Дата-время последней попытки"
     }
 ```
 

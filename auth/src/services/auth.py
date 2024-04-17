@@ -87,7 +87,7 @@ class AuthService(BaseService):
         if not jwt_id:
             return
 
-        token = await self.session.scalars(select(RefreshToken).where(RefreshToken.jwt_id == jwt_id))
+        token = await self.session.scalars(select(RefreshToken).where(RefreshToken.jwt_id == jwt_id).limit(1))
         token = token.first()
         if token:
             await self.session.delete(token)
@@ -186,11 +186,17 @@ async def get_jwt_token_payload(jwt_token: str) -> JWTTokenPayload | None:
     return JWTTokenPayload(**payload)
 
 
-@lru_cache
 def get_auth_service(
     alchemy: AsyncSession = Depends(get_session),
     redis: Redis = Depends(get_redis),
 ) -> AuthService:
+    """Gets AuthService instance for dependencies injection.
+
+    About @lru_cache:
+    Each request should get a fresh AsyncSession to avoid sharing transactions
+    and to maintain the integrity of the session's state within each request's lifecycle.
+    Therefore, caching a service that depends on such a session is not recommended."""
+
     return AuthService(session=alchemy, redis=redis)
 
 

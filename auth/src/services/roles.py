@@ -24,9 +24,9 @@ class RolesService(BaseService):
         """Retrieves Role from PostgreSQL using SQLAlchemy"""
         query = select(Role).options(selectinload(Role.permissions))
         if code:
-            result = await self.session.scalars(query.where(Role.code == code))
+            result = await self.session.scalars(query.where(Role.code == code).limit(1))
         elif role_id:
-            result = await self.session.scalars(query.where(Role.id == role_id))
+            result = await self.session.scalars(query.where(Role.id == role_id).limit(1))
         else:
             return None
         return result.first()
@@ -179,8 +179,14 @@ class RolesService(BaseService):
         return await self.create(new_role)
 
 
-@lru_cache
 def get_roles_service(
     alchemy: AsyncSession = Depends(get_session),
 ) -> RolesService:
+    """Gets RolesService instance for dependencies injection.
+
+    About @lru_cache:
+    Each request should get a fresh AsyncSession to avoid sharing transactions
+    and to maintain the integrity of the session's state within each request's lifecycle.
+    Therefore, caching a service that depends on such a session is not recommended."""
+
     return RolesService(session=alchemy, redis=None)

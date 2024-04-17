@@ -31,7 +31,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         db_name=settings.postgres_auth_db,
     )
     alchemy.engine = create_async_engine(dsn, echo=True, future=True)
-    alchemy.async_session = sessionmaker(alchemy.engine, class_=AsyncSession, expire_on_commit=False)
+    alchemy.AsyncSessionLocal = sessionmaker(alchemy.engine, class_=AsyncSession, expire_on_commit=False)
 
     # Импорт моделей необходим для их автоматического создания
     from models import User  # noqa
