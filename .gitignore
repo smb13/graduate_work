@@ -161,3 +161,7 @@ cython_debug/
 .idea/
 
 rabbit_volume
+
+# temporary files
+tmp/
+temp/
