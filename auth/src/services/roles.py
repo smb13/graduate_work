@@ -9,6 +9,7 @@ from fastapi_pagination.cursor import CursorPage
 from fastapi_pagination.ext.async_sqlalchemy import paginate
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from core.enums import ActionEnum, SystemRolesEnum
 from db.alchemy import get_session
@@ -21,13 +22,14 @@ from services.base import BaseService
 class RolesService(BaseService):
     async def retrieve(self, *, code: str | None = None, role_id: uuid.UUID | None = None) -> Role | None:
         """Retrieves Role from PostgreSQL using SQLAlchemy"""
+        query = select(Role).options(selectinload(Role.permissions))
         if code:
-            role = await self.session.scalars(select(Role).where(Role.code == code))
-            return role.first()
-        if role_id:
-            role = await self.session.scalars(select(Role).where(Role.id == role_id))
-            return role.first()
-        return None
+            result = await self.session.scalars(query.where(Role.code == code))
+        elif role_id:
+            result = await self.session.scalars(query.where(Role.id == role_id))
+        else:
+            return None
+        return result.first()
 
     async def create(self, role_create: role_schemas.RoleCreate) -> Role:
         """Creates Role with Permissions in PostgreSQL using SQLAlchemy"""
