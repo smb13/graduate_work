@@ -179,8 +179,14 @@ class RolesService(BaseService):
         return await self.create(new_role)
 
 
-@lru_cache
 def get_roles_service(
     alchemy: AsyncSession = Depends(get_session),
 ) -> RolesService:
+    """Gets RolesService instance for dependencies injection.
+
+    About @lru_cache:
+    Each request should get a fresh AsyncSession to avoid sharing transactions
+    and to maintain the integrity of the session's state within each request's lifecycle.
+    Therefore, caching a service that depends on such a session is not recommended."""
+
     return RolesService(session=alchemy, redis=None)

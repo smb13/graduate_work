@@ -28,6 +28,12 @@ class AbstractOAuth(metaclass=ABCMeta):
         pass
 
     @classmethod
-    @lru_cache
     def get_provider_service(cls, request: Request, alchemy: AsyncSession = Depends(get_session)) -> "AbstractOAuth":
+        """Gets OAuth service instance for dependencies injection.
+
+        About @lru_cache:
+        Each request should get a fresh AsyncSession to avoid sharing transactions
+        and to maintain the integrity of the session's state within each request's lifecycle.
+        Therefore, caching a service that depends on such a session is not recommended."""
+
         return cls(session=alchemy, redis=None)

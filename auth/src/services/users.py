@@ -75,8 +75,14 @@ class UsersService(BaseService):
         return user
 
 
-@lru_cache
 def get_users_service(
     alchemy: AsyncSession = Depends(get_session),
 ) -> UsersService:
+    """Gets UsersService instance for dependencies injection.
+
+    About @lru_cache:
+    Each request should get a fresh AsyncSession to avoid sharing transactions
+    and to maintain the integrity of the session's state within each request's lifecycle.
+    Therefore, caching a service that depends on such a session is not recommended."""
+
     return UsersService(session=alchemy, redis=None)
