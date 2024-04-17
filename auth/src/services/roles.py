@@ -24,9 +24,9 @@ class RolesService(BaseService):
         """Retrieves Role from PostgreSQL using SQLAlchemy"""
         query = select(Role).options(selectinload(Role.permissions))
         if code:
-            result = await self.session.scalars(query.where(Role.code == code))
+            result = await self.session.scalars(query.where(Role.code == code).limit(1))
         elif role_id:
-            result = await self.session.scalars(query.where(Role.id == role_id))
+            result = await self.session.scalars(query.where(Role.id == role_id).limit(1))
         else:
             return None
         return result.first()
