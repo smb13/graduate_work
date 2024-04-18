@@ -204,6 +204,23 @@ services        :
     depends_on:
     -   rabbit
 
+  billing:
+    extends:
+      file: docker-compose-base.yml
+      service: billing
+    volumes:
+    -   ./billing/src:/src
+    environment:
+      DEBUG: true
+    ports:
+    -   8800:8000
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    logging:
+      driver: gelf
+      options:
+        gelf-address: udp://127.0.0.1:5044
+        tag: apps
+
   rabbit:
     extends:
       file: docker-compose-base.yml
