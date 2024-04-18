@@ -6,4 +6,7 @@ es: AsyncElasticsearch | None = None
 
 
 async def get_elastic() -> AsyncElasticsearch:
+    if not es:
+        raise RuntimeError("Elasticsearch is not initialized")
+
     return es

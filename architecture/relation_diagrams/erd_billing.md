@@ -12,6 +12,7 @@ erDiagram
         string state "Состояние (pending, succeeded, canceled)" 
         string description "Назначение платежа (Подписка X)"
         decimal amount "Сумма платежа"
+        str currency "Трехбуквенный код валюты в формате ISO-4217"
         datetime dt_created "Создано"
         datetime dt_changed "Изменено"
         int cnt_attempts "Номер попытки"
