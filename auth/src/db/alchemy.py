@@ -26,5 +26,8 @@ async def purge_database() -> None:
 
 
 async def get_session() -> typing.AsyncGenerator[AsyncSession, None]:
+    if not AsyncSessionLocal:
+        raise RuntimeError("Database is not initialized")
+
     async with AsyncSessionLocal() as session:  # type: ignore
         yield session
