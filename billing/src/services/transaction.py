@@ -64,7 +64,7 @@ class TransactionService(BaseDBService):
         user_id: uuid.UUID,
         payment_method_id: uuid.UUID,
     ):
-        """Gets last payment for payment_method_id and refunds it."""
+        """Gets last successful payment for payment_method_id."""
         payment_to_refund = await self.session.scalars(
             select(Transaction)
             .where(Transaction.user_id == user_id)
@@ -90,7 +90,7 @@ class TransactionService(BaseDBService):
         payment_method_id: uuid.UUID,
         payment_to_refund_id: uuid.UUID,
     ) -> PaymentResponse | None:
-        """Gets last payment for payment_method_id and refunds it."""
+        """Creates a new refund transaction."""
 
         transaction = Transaction(
             user_id=user_id,
