@@ -36,8 +36,14 @@ oauth2_scheme = OAuth2PasswordBearer(
 class AuthService(BaseService):
     @staticmethod
     async def make_access_token(user: User, role_codes: Sequence[str]) -> str:
+
+        # TODO Сделать запрос в API сервиса подписок.
+        subs = ['test', 'kinopoisk', 'pornhub', 'культура']
+
         token, _ = await generate_jwt_signed_token(
-            data={"sub": str(user.id), "roles": role_codes, "type": "access"},
+            data={
+                "sub": str(user.id), "roles": role_codes, "type": "access", "subs": subs
+            },
             expires_minutes=settings.jwt_access_token_expires_minutes,
             secret_key=settings.jwt_access_token_secret_key,
         )
