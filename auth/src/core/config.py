@@ -45,7 +45,9 @@ class Settings(BaseSettings):
     google_client_id: str
     google_client_secret: str
 
+    jaeger_agent_host: str = Field(alias="JAEGER_AGENT_HOST", default="jaeger")
     jaeger_agent_port: int = 6831
+    jaeger_to_console: bool = Field(alias="JAEGER_TO_CONSOLE", default=False)
 
 
 # Корень проекта

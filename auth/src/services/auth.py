@@ -4,7 +4,6 @@ import hmac
 import uuid
 from base64 import urlsafe_b64decode, urlsafe_b64encode
 from collections.abc import Callable, Sequence
-from functools import lru_cache
 from typing import Annotated
 
 from fastapi import Depends, HTTPException

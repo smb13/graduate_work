@@ -269,6 +269,8 @@ services        :
     extends:
       file: docker-compose-base.yml
       service: redis
+    ports:
+    - "6379:6379"
     volumes:
     -   redis_data:/data
 
