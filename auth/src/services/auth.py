@@ -38,7 +38,7 @@ class AuthService(BaseService):
     @staticmethod
     async def make_access_token(user: User, role_codes: Sequence[str]) -> str:
         token, _ = await generate_jwt_signed_token(
-            data={"sub": str(user.id), "roles": role_codes},
+            data={"sub": str(user.id), "roles": role_codes, "type": "access"},
             expires_minutes=settings.jwt_access_token_expires_minutes,
             secret_key=settings.jwt_access_token_secret_key,
         )
@@ -47,7 +47,7 @@ class AuthService(BaseService):
     async def make_refresh_token(self, user: User) -> str:
         jti = uuid.uuid4()
         refresh_token, exp = await generate_jwt_signed_token(
-            data={"sub": str(user.id), "jti": str(jti)},
+            data={"sub": str(user.id), "jti": str(jti), "type": "refresh"},
             expires_minutes=settings.jwt_refresh_token_expires_minutes,
             secret_key=settings.jwt_refresh_token_secret_key,
         )
