@@ -11,13 +11,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db.postgres import get_session
 from models import UserSubscription
 from models.subscription import UserSubscription, SubscriptionStatus
+from schemas.user_subscription import PaymentMethodId
 
 
 class UserSubscriptionService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def activate_subscription(self, user_subscription_id: UUID, payment_method_id: UUID):
+    async def activate_subscription(self, user_subscription_id: UUID, payment_method_id: PaymentMethodId):
         user_subscription = (
             await self.db.execute(select(UserSubscription)
                                   .where(and_(UserSubscription.id == user_subscription_id,
@@ -36,13 +37,13 @@ class UserSubscriptionService:
                                   .values(status=SubscriptionStatus.ACTIVE,
                                           start_of_subscription=today,
                                           end_of_subscription=end_of_subscription,
-                                          payment_method_id=payment_method_id))
+                                          payment_method_id=payment_method_id.payment_method_id))
         else:
             await self.db.execute(update(UserSubscription)
                                   .where(UserSubscription.id == user_subscription_id)
                                   .values(status=SubscriptionStatus.ACTIVE,
                                           end_of_subscription=end_of_subscription,
-                                          payment_method_id=payment_method_id))
+                                          payment_method_id=payment_method_id.payment_method_id))
         await self.db.commit()
 
     async def cancel_subscription(self, user_subscription_id) -> None:

@@ -43,6 +43,13 @@ class UserSubscriptionResponse(UserSubscriptionBase):
 
 class UrlResponse(BaseModel):
     confirmation_url: str = Field(
-        title='ссылка на оплату',
+        title='Ссылка на оплату',
         examples=['https://yoomoney.ru/api-pages/v2/payment-confirm/epl?orderId=2419a771-000f-5000-9000-1edaf29243f2',],
+    )
+
+
+class PaymentMethodId(BaseModel):
+    payment_method_id: UUID = Field(
+        title='UUID метода оплаты',
+        examples=[UUID('5a3f85b0-b4e2-432b-8732-0813bf09c29f'),],
     )

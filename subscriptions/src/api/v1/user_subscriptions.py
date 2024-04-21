@@ -1,11 +1,14 @@
 from http import HTTPStatus
+from typing import Sequence
+
 from typing_extensions import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
+from models import UserSubscription
 from schemas.error import HttpExceptionModel
-from schemas.user_subscription import UserSubscriptionResponse
+from schemas.user_subscription import UserSubscriptionResponse, PaymentMethodId
 from services.access import security_jwt, check_access, Roles
 from services.user_subscription import UserSubscriptionService, get_user_subscription_service
 
@@ -25,7 +28,7 @@ router = APIRouter(redirect_slashes=False, prefix="/user_subscriptions", tags=['
 @check_access({Roles.admin})
 async def activate_user_subscription(
         user_subscription_id: UUID,
-        payment_method_id: UUID,
+        payment_method_id: PaymentMethodId,
         user_subscription_service: UserSubscriptionService = Depends(get_user_subscription_service),
         user: dict = Depends(security_jwt),
 ) -> None:
@@ -67,7 +70,7 @@ async def get_user_active_subscriptions(
         subscription_type_id: Annotated[int, Query(description="Subscription type id")] = None,
         user_subscription_service: UserSubscriptionService = Depends(get_user_subscription_service),
         user: dict = Depends(security_jwt),
-) -> list[UserSubscriptionResponse]:
+) -> Sequence[UserSubscription]:
     return await user_subscription_service.list_user_active_subscriptions(user_id=user_id,
                                                                           subscription_type_id=subscription_type_id)
 
