@@ -1,10 +1,9 @@
 import uuid
-from functools import lru_cache
 from http import HTTPStatus
 
 from fastapi import Depends, HTTPException
 from fastapi_pagination.cursor import CursorPage
-from fastapi_pagination.ext.async_sqlalchemy import paginate
+from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
