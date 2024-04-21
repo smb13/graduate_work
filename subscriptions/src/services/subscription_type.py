@@ -18,32 +18,21 @@ from models.subscription import SubscriptionType
 from schemas.subscription_type import SubscriptionTypeResponse, SubscriptionTypeBase
 
 
-def check_access(allow_permission: str):
-    def inner(function):
-        @wraps(function)
-        async def wrapper(*args, **kwargs):
-            user_role_service = kwargs.get('user_role_service')
-            if not await user_role_service.is_superuser():
-                await user_role_service.check_access(allow_permission)
-            return await function(*args, **kwargs)
-        return wrapper
-    return inner
-
-
 class SubscriptionTypeService:
-    def __init__(self, db: AsyncSession, jwt: AuthJWT):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.jwt = jwt
 
-    async def list_subscription_types(self, on_date: date) -> list[SubscriptionTypeResponse]:
-        await self.jwt.jwt_required()
-        if on_date:
-            result = await self.db.execute(select(SubscriptionType)
-                                           .where(and_(SubscriptionType.start_of_sales <= on_date,
-                                                       SubscriptionType.end_of_sales >= on_date))
-                                           .order_by(SubscriptionType.name))
-        else:
-            result = await self.db.execute(select(SubscriptionType))
+    async def list_current_subscription_types(self) -> list[SubscriptionTypeResponse]:
+        today = date.today()
+        result = await self.db.execute(select(SubscriptionType)
+                                       .where(and_(SubscriptionType.start_of_sales <= today,
+                                                   SubscriptionType.end_of_sales >= today))
+                                       .order_by(SubscriptionType.name))
+        subscription_types = result.scalars().all()
+        return subscription_types
+
+    async def list_all_subscription_types(self) -> list[SubscriptionTypeResponse]:
+        result = await self.db.execute(select(SubscriptionType))
         subscription_types = result.scalars().all()
         return subscription_types
 
@@ -51,7 +40,6 @@ class SubscriptionTypeService:
             self,
             subscription_type_create: SubscriptionTypeBase
     ) -> SubscriptionTypeResponse | Exception:
-        await self.jwt.jwt_required()
         subscription_type = SubscriptionType(**jsonable_encoder(subscription_type_create))
         self.db.add(subscription_type)
         try:
@@ -65,9 +53,8 @@ class SubscriptionTypeService:
         return subscription_type
 
     async def patch_subscription_type(
-            self, subscription_type_id: UUID, subscription_type_patch: SubscriptionTypeBase
+            self, subscription_type_id: int, subscription_type_patch: SubscriptionTypeBase
     ) -> Optional[SubscriptionTypeResponse]:
-        await self.jwt.jwt_required()
         values = jsonable_encoder(subscription_type_patch)
         try:
             await self.db.execute(
@@ -85,7 +72,7 @@ class SubscriptionTypeService:
         result = await self.db.execute(select(SubscriptionType).where(SubscriptionType.id == subscription_type_id))
         return result.scalars().first()
 
-    async def get_subscription_type_by_id(self, subscription_type_id: UUID) -> SubscriptionTypeResponse:
+    async def get_subscription_type_by_id(self, subscription_type_id: int) -> SubscriptionTypeResponse:
         result = await self.db.execute(select(SubscriptionType).where(SubscriptionType.id == subscription_type_id))
         return result.scalars().first()
 
@@ -93,6 +80,5 @@ class SubscriptionTypeService:
 @lru_cache()
 def get_subscription_type_service(
         db: AsyncSession = Depends(get_session),
-        jwt: AuthJWT = Depends()
 ) -> SubscriptionTypeService:
-    return SubscriptionTypeService(db, jwt)
+    return SubscriptionTypeService(db)

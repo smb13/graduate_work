@@ -1,4 +1,5 @@
 import http
+from enum import Enum
 from functools import wraps
 
 import time
@@ -10,20 +11,21 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from core.config import project_settings
 
 
-general_subscriber = 'GENERAL_SUBSCRIBER_PERMISSION'
-premium_subscriber = 'PREMIUM_SUBSCRIBER_PERMISSION'
+class Roles(str, Enum):
+    user = "user"
+    admin = "admin"
 
 
-def check_access(allow_permission: str):
+def check_access(allow_roles: set):
     def inner(function):
         @wraps(function)
         async def wrapper(*args, **kwargs):
             user = kwargs.get('user')
-            if not user['superuser']:
-                if allow_permission is None:
+            user_roles = user['roles']
+            if Roles.admin not in user_roles:
+                if allow_roles is None:
                     return
-                user_permissions = user['permissions']
-                if not {allow_permission} & set(user_permissions):
+                if not allow_roles & set(user_roles):
                     raise HTTPException(status_code=http.HTTPStatus.FORBIDDEN,
                                         detail='Insufficient permissions')
             return await function(*args, **kwargs)

@@ -1,6 +1,7 @@
 from datetime import date
+import enum
 
-from sqlalchemy import Column, ForeignKey, String, UniqueConstraint, Integer, Date
+from sqlalchemy import Column, ForeignKey, String, UniqueConstraint, Integer, Date, Enum, Identity
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -8,9 +9,18 @@ from models.base import Base
 from models.mixin import IdMixin, TimestampMixin
 
 
-class SubscriptionType(IdMixin, TimestampMixin, Base):
+class SubscriptionStatus(enum.Enum):
+    NEW = 'new'
+    AWAITING_PAYMENTS = 'awaiting_payment'
+    ACTIVE = 'active'
+    AWAITING_RENEWAL = 'awaiting_renewal'
+    INACTIVE = 'inactive'
+
+
+class SubscriptionType(TimestampMixin, Base):
     __tablename__ = 'subscription_type'
 
+    id = Column(Integer, Identity(), primary_key=True)
     name = Column(String(255), unique=True, nullable=False)
     description = Column(String(255), unique=False, nullable=True)
     annual_price = Column(Integer, unique=False, nullable=False)
@@ -18,7 +28,7 @@ class SubscriptionType(IdMixin, TimestampMixin, Base):
     start_of_sales = Column(Date, default=date.today())
     end_of_sales = Column(Date, default=date(year=3000, month=1, day=1))
 
-    users = relationship('UserSubscription', back_populates='subscription_type', lazy='selectin')
+    user_subscriptions = relationship('UserSubscription', back_populates='subscription_type', lazy='selectin')
 
     def __repr__(self) -> str:
         return f'<SubscriptionType name:{self.name}, description: {self.description}, ' + \
@@ -33,15 +43,16 @@ class UserSubscription(IdMixin, TimestampMixin, Base):
         UniqueConstraint('type_id', 'user_id', 'payment_method_id'),
     )
 
-    type_id = Column(UUID(as_uuid=True),
+    type_id = Column(Integer,
                      ForeignKey('subscription_type.id', ondelete='CASCADE'),
                      nullable=False)
     user_id = Column(UUID(as_uuid=True), nullable=False)
-    payment_method_id = Column(UUID(as_uuid=True), nullable=False)
-    start_of_subscription = Column(Date, nullable=False)
-    end_of_subscription = Column(Date, nullable=False)
+    payment_method_id = Column(UUID(as_uuid=True), nullable=True)
+    status = Column(Enum(SubscriptionStatus), nullable=False)
+    start_of_subscription = Column(Date, nullable=True)
+    end_of_subscription = Column(Date, nullable=True)
 
-    subscription_type = relationship('SubscriptionType', back_populates='users', lazy='selectin')
+    subscription_type = relationship('SubscriptionType', back_populates='user_subscriptions', lazy='selectin')
 
     def __repr__(self) -> str:
         return f'<UserSubscription type_id:{self.type_id}, user_id: {self.user_id}, ' + \

@@ -3,15 +3,21 @@ from uuid import UUID
 
 from pydantic import Field, BaseModel
 
+from models.subscription import SubscriptionStatus
+
 
 class UserSubscriptionBase(BaseModel):
-    type_id: UUID = Field(
-        title='UUID типа подписки',
-        examples=[UUID('7fb9f6e0-f13d-4409-b924-1563b4a8774c'), ],
+    type_id: int = Field(
+        title='Id типа подписки',
+        examples=[3, ],
     )
-    payment_method_id: UUID = Field(
+    payment_method_id: UUID | None = Field(
         title='UUID автоплатежа',
         examples=[UUID('4439e956-d1bf-41ad-8a9a-41fac7b8d0c8'), ],
+    )
+    status: SubscriptionStatus = Field(
+        title='Статус подписки',
+        examples=[SubscriptionStatus.NEW, ],
     )
     start_of_subscription: date | None = Field(
         default=date.today(),
@@ -33,3 +39,10 @@ class UserSubscriptionResponse(UserSubscriptionBase):
 
     class Config:
         from_attributes = True
+
+
+class UrlResponse(BaseModel):
+    confirmation_url: str = Field(
+        title='ссылка на оплату',
+        examples=['https://yoomoney.ru/api-pages/v2/payment-confirm/epl?orderId=2419a771-000f-5000-9000-1edaf29243f2',],
+    )

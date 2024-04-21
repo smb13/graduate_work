@@ -19,6 +19,7 @@ erDiagram
         uuid type_id FK "Тип подписки"
         uuid user_id "Пользователь"
         uuid payment_method_id "ID автоплатежа"
+        string status "Статус подписки"
         date start_of_subscription "Начало подписки"
         date end_of_subscription "Окончание подписки"
         datetime created_at "Создано"

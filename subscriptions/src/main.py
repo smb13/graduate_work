@@ -9,7 +9,7 @@ from fastapi.responses import ORJSONResponse
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from api.v1 import subscription_types, user_subscriptions
+from api.v1 import subscription_types, me_user_subscriptions, user_subscriptions, user_subscription_types
 
 from core.config import project_settings
 from core.logger import LOGGING
@@ -42,6 +42,8 @@ app = FastAPI(
 
 # Подключаем роутер к серверу с указанием префикса для API (/v1/films).
 app.include_router(subscription_types.router, prefix='/api/v1')
+app.include_router(user_subscription_types.router, prefix='/api/v1')
+app.include_router(me_user_subscriptions.router, prefix='/api/v1')
 app.include_router(user_subscriptions.router, prefix='/api/v1')
 
 

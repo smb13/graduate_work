@@ -5,28 +5,29 @@ from pydantic import Field, BaseModel
 
 
 class SubscriptionTypeBase(BaseModel):
-    name: str | None = Field(
+    name: str = Field(
         title='Название подписки',
         examples=["Базовая подписка",],
     )
-    description: str | None = Field(
+    description: str = Field(
         default='',
         title='Описание подписки',
         examples=["Годовая базовая подписка, которая включает в себя фильмы и сериалы",],
     )
-    annual_price: int | None = Field(
+    annual_price: int = Field(
         title='Годовая стоимость подписки в рублях',
         examples=[1200,],
     )
-    monthly_price: int | None = Field(
+    monthly_price: int = Field(
         title='Месячная стоимость подписки в рублях',
         examples=[100,],
     )
-    start_of_sales: date | None = Field(
+    start_of_sales: date = Field(
+        default=date.today(),
         title='Дата начала продаж подписки',
         examples=[date(year=2020, month=1, day=1),],
     )
-    end_of_sales: date | None = Field(
+    end_of_sales: date = Field(
         default=date(year=3000, month=1, day=1),
         title='Дата окончания продаж подписки',
         examples=[date(year=3000, month=1, day=1),],
@@ -34,9 +35,9 @@ class SubscriptionTypeBase(BaseModel):
 
 
 class SubscriptionTypeResponse(SubscriptionTypeBase):
-    id: UUID = Field(
-        title='UUID сохраненной подписки',
-        examples=[UUID('61d07e94-2967-4c91-8e5c-5e558aa8b221'),],
+    id: int = Field(
+        title='Id сохраненной подписки',
+        examples=[1002,],
     )
 
     class Config:

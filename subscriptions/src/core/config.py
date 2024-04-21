@@ -1,16 +1,15 @@
-from datetime import timedelta
 from logging import config as logging_config
 
-from core.logger import LOGGING
 from pydantic import Field
 from pydantic_settings import SettingsConfigDict, BaseSettings
+
+from core.logger import LOGGING
 
 # Применяем настройки логирования
 logging_config.dictConfig(LOGGING)
 
 
 class ProjectSettings(BaseSettings):
-    # TODO: Вынести в настройки.
     name: str = Field('Subscriptions Service')
     authjwt_secret_key: str = Field(default="movies_token_secret", alias="JWT_ACCESS_TOKEN_SECRET_KEY")
     authjwt_algorithm: str = Field(default="HS256")
@@ -40,15 +39,31 @@ class PostgresSettings(BaseSettings):
         }
 
 
+# Класс настройки сервиса Billing
+class BillingSettings(BaseSettings):
+    host: str = Field('billing')
+    port: int = Field(8000)
+    new_uri: str = Field('/api/v1/payments/new')
+    renew_uri: str = Field('/api/v1/payments/renew')
+    refund_uri: str = Field('/api/v1/payments/refund')
+
+    def get_address(self):
+        return f'http://{self.host}:{self.port}'
+
+    model_config = SettingsConfigDict(env_prefix='billing_', env_file='.env')
+
+
 # Класс настройки Elasticsearch
 class GunicornSettings(BaseSettings):
     host: str = Field('0.0.0.0')
     port: int = Field(8000)
     workers: int = Field(2)
     loglevel: str = Field('debug')
+
     model_config = SettingsConfigDict(env_prefix='gunicorn_', env_file='.env')
 
 
 project_settings = ProjectSettings()
 postgres_settings = PostgresSettings()
+billing_settings = BillingSettings()
 gunicorn_settings = GunicornSettings()
