@@ -17,6 +17,34 @@ from db.postgres import get_session
 from models.subscription import SubscriptionType
 from schemas.subscription_type import SubscriptionTypeResponse, SubscriptionTypeBase
 
+subscription_type_1 = SubscriptionType(
+    name='Премиум подписка',
+    description='Годовая премиум подписка, которая включает в себя фильмы и сериалы',
+    annual_price=2400,
+    monthly_price=200,
+    start_of_sales=date(2020,1,1),
+    end_of_sales=date(3000,1,1),
+    id=2
+)
+subscription_type_2 = SubscriptionType(
+    name='Базовая подписка',
+    description='Годовая базовая подписка, которая включает в себя фильмы и сериалы',
+    annual_price=1200,
+    monthly_price=100,
+    start_of_sales=date(2020,1,1),
+    end_of_sales=date(2024,1,1),
+    id=1
+)
+subscription_type_3 = SubscriptionType(
+    name='Базовая подписка NEW',
+    description='Годовая базовая подписка c 2024 г, которая включает в себя фильмы и сериалы',
+    annual_price=1800,
+    monthly_price=150,
+    start_of_sales=date(2024,1,1),
+    end_of_sales=date(2024,1,1),
+    id=3
+)
+
 
 class SubscriptionTypeService:
     def __init__(self, db: AsyncSession):
@@ -35,6 +63,9 @@ class SubscriptionTypeService:
         result = await self.db.execute(select(SubscriptionType))
         subscription_types = result.scalars().all()
         return subscription_types
+
+    async def mock_list_all_subscription_types(self) -> list[SubscriptionTypeResponse]:
+        return [subscription_type_1, subscription_type_2, subscription_type_3]
 
     async def create_subscription_type(
             self,

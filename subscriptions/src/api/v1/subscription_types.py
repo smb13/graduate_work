@@ -91,4 +91,4 @@ async def list_all_subscriptions(
         subscription_type_service: SubscriptionTypeService = Depends(get_subscription_type_service),
         user: dict = Depends(security_jwt),
 ) -> list[SubscriptionTypeResponse]:
-    return await subscription_type_service.list_all_subscription_types()
+    return await subscription_type_service.mock_list_all_subscription_types()

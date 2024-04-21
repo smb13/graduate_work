@@ -9,9 +9,25 @@ from sqlalchemy import select, update, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.postgres import get_session
-from models import UserSubscription
 from models.subscription import UserSubscription, SubscriptionStatus
 from schemas.user_subscription import PaymentMethodId
+
+user_subscription_1 = UserSubscription(
+    type_id=2,
+    payment_method_id=UUID('5a3f85b0-b4e2-432b-8732-0813bf09c29f'),
+    status='active',
+    start_of_subscription=date(2024, 4, 21),
+    end_of_subscription=date(2024, 4, 21),
+    id=UUID('58842c26-45fa-4aac-aa55-19062939e69f')
+)
+user_subscription_2 = UserSubscription(
+    type_id=3,
+    payment_method_id=UUID('437bc796-035b-4d02-a247-c6ed607e9868'),
+    status='active',
+    start_of_subscription=date(2024, 4, 21),
+    end_of_subscription=date(2024, 4, 21),
+    id=UUID('8ed2b403-f889-4887-8a8a-d47d33fca1dd')
+)
 
 
 class UserSubscriptionService:
@@ -82,6 +98,17 @@ class UserSubscriptionService:
                                                   UserSubscription.status == SubscriptionStatus.ACTIVE)))
             ).scalars().all()
         return user_subscriptions
+
+    async def mock_list_user_active_subscriptions(
+            self,
+            user_id: UUID,
+            subscription_type_id: int | None,
+    ) -> Sequence[UserSubscription]:
+        user_subscriptions = [user_subscription_1, user_subscription_2]
+        if subscription_type_id:
+            return list(filter(lambda x: (x.type_id == subscription_type_id), user_subscriptions))
+        else:
+            return user_subscriptions
 
 
 @lru_cache()
