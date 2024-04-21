@@ -25,10 +25,12 @@ router = APIRouter(redirect_slashes=False, prefix="/user_subscriptions", tags=['
 @check_access({Roles.admin})
 async def activate_user_subscription(
         user_subscription_id: UUID,
+        payment_method_id: UUID,
         user_subscription_service: UserSubscriptionService = Depends(get_user_subscription_service),
         user: dict = Depends(security_jwt),
 ) -> None:
-    await user_subscription_service.activate_subscription(user_subscription_id)
+    await user_subscription_service.activate_subscription(user_subscription_id=user_subscription_id,
+                                                          payment_method_id=payment_method_id)
 
 
 @router.post(
@@ -61,7 +63,7 @@ async def cancel_user_subscription(
 )
 @check_access({Roles.admin})
 async def get_user_active_subscriptions(
-        user_id: Annotated[UUID, Query(description="User id")] = None,
+        user_id: Annotated[UUID, Query(description="User id")],
         subscription_type_id: Annotated[int, Query(description="Subscription type id")] = None,
         user_subscription_service: UserSubscriptionService = Depends(get_user_subscription_service),
         user: dict = Depends(security_jwt),

@@ -6,17 +6,29 @@ from async_fastapi_jwt_auth import AuthJWT
 from async_fastapi_jwt_auth.exceptions import AuthJWTException
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from api.v1 import subscription_types, me_user_subscriptions, user_subscriptions, user_subscription_types
 
-from core.config import project_settings
+from core.config import project_settings, postgres_settings
 from core.logger import LOGGING
+from db import postgres
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    postgres.engine = create_async_engine(
+        **postgres_settings.get_connection_info(), echo=postgres_settings.echo, future=True
+    )
+    postgres.async_session = async_sessionmaker(
+        postgres.engine, class_=AsyncSession, expire_on_commit=False
+    )
+
+    if project_settings.debug:
+        await postgres.create_database()
+
     yield
 
 

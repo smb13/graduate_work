@@ -1,16 +1,12 @@
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-# from sqlalchemy.orm import declarative_base
 
-from core.config import postgres_settings
+from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import sessionmaker
 
-# Base = declarative_base()
+from models import Base
 
-engine = create_async_engine(
-    **postgres_settings.get_connection_info(), echo=postgres_settings.echo, future=True
-)
-async_session = async_sessionmaker(
-    engine, class_=AsyncSession, expire_on_commit=False
-)
+engine: AsyncEngine | None = None
+async_session: sessionmaker | None = None
 
 
 async def get_session() -> AsyncSession:

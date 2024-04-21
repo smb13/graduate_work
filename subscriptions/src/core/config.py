@@ -13,6 +13,7 @@ class ProjectSettings(BaseSettings):
     name: str = Field('Subscriptions Service')
     authjwt_secret_key: str = Field(default="movies_token_secret", alias="JWT_ACCESS_TOKEN_SECRET_KEY")
     authjwt_algorithm: str = Field(default="HS256")
+    debug: bool = Field(default=False, alias="DEBUG")
 
     model_config = SettingsConfigDict(env_prefix='project_', env_file='.env')
 
