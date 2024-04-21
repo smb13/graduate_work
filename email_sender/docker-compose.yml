@@ -1,0 +1,9 @@
+---
+version : '3.9'
+
+services:
+  email-sender:
+    build: .
+    env_file: ./.env
+    ports:
+    -   ${APP_SENDER_PORT:-9746}:8000
