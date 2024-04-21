@@ -10,7 +10,6 @@ from clients.yookassa import client as yookassa
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import ORJSONResponse
 from fastapi_pagination import add_pagination
-from jobs.process_payments import process_recurring_payments_job
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -25,6 +24,8 @@ description = """Проведение платежей и автоплатеже
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
+    from jobs.process_payments import process_recurring_payments_job
+
     redis.redis = Redis(host=settings.redis_host, port=settings.redis_port, db=settings.redis_db)
 
     dsn = "postgresql+asyncpg://{user}:{password}@{host}:{port}/{db_name}".format(
