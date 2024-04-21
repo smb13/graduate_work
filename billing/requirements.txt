@@ -25,5 +25,7 @@ opentelemetry-exporter-jaeger==1.21.0
 
 sentry-sdk==1.45.0
 
+APScheduler==3.10.4
+
 yookassa==3.1.0
 git+https://github.com/n-leonovets/aioyookassa.git@aea0fd28bb9d5b70c30a68e4235e1e9bf8888c76

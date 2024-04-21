@@ -4,10 +4,13 @@ from http import HTTPStatus
 
 import uvicorn
 from aioyookassa import YooKassa
-from clients import alchemy, redis, yookassa
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from clients import alchemy, redis
+from clients.yookassa import client as yookassa
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import ORJSONResponse
 from fastapi_pagination import add_pagination
+from jobs.process_payments import process_recurring_payments_job
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -39,6 +42,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         shop_id=settings.yookassa_account_id,
     )
 
+    scheduler = AsyncIOScheduler()
+    scheduler.start()
+    scheduler.add_job(process_recurring_payments_job, "cron", hour=15, minute=0)
+
     # Импорт моделей необходим для их автоматического создания
     from models import Transaction  # noqa
 
@@ -48,6 +55,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     yield
 
     await redis.redis.close()
+
+    scheduler.shutdown()
 
     # Для очистки базы данных при выключении сервера if settings.debug: await alchemy.purge_database()
 
