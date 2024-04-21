@@ -80,7 +80,7 @@ async def get_subscription_type_by_id(
 @router.get(
     '',
     response_model=list[SubscriptionTypeResponse],
-    summary='Получение списка всех, в том числе недействующих на текущую дату, подписок, доступен администратору',
+    summary='Получение списка всех, в том числе недействующих на текущую дату, типов подписок, доступен администратору',
     responses={
         HTTPStatus.UNAUTHORIZED: {'model': HttpExceptionModel},
         HTTPStatus.FORBIDDEN: {'model': HttpExceptionModel},

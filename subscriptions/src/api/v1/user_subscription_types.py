@@ -13,7 +13,7 @@ router = APIRouter(redirect_slashes=False, prefix="/user-subscription-types", ta
 @router.get(
     '',
     response_model=list[SubscriptionTypeResponse],
-    summary='Получение списка подписок на текущую дату, доступен пользователю',
+    summary='Получение списка типов подписок на текущую дату, доступен пользователю',
     responses={
         HTTPStatus.UNAUTHORIZED: {'model': HttpExceptionModel},
         HTTPStatus.FORBIDDEN: {'model': HttpExceptionModel},

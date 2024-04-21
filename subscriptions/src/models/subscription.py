@@ -11,7 +11,7 @@ from models.mixin import IdMixin, TimestampMixin
 
 class SubscriptionStatus(enum.Enum):
     NEW = 'new'
-    AWAITING_PAYMENTS = 'awaiting_payment'
+    AWAITING_PAYMENT = 'awaiting_payment'
     ACTIVE = 'active'
     AWAITING_RENEWAL = 'awaiting_renewal'
     INACTIVE = 'inactive'

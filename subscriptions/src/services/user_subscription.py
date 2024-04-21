@@ -6,28 +6,23 @@ from uuid import UUID
 
 from fastapi import Depends, HTTPException
 from psycopg.errors import UniqueViolation
-from sqlalchemy import select, update
+from sqlalchemy import select, update, or_, and_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import billing_settings
 from db.postgres import get_session
 from models.subscription import UserSubscription, SubscriptionType, SubscriptionStatus
-from services.billing import BillingService, get_billing_service
 
 
-class MeUserSubscriptionService:
-    def __init__(self, db: AsyncSession, billing_service: BillingService):
+class UserSubscriptionService:
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.billing_service = billing_service
 
     async def list_user_subscriptions(self, user: dict) -> Sequence[UserSubscription]:
         user_id = UUID(user['sub'])
-        user_subscriptions = (
-            await self.db.execute(select(UserSubscription)
-                                  .where(UserSubscription.user_id == user_id,
-                                         UserSubscription.status != SubscriptionStatus.INACTIVE))
-        ).scalars().all()
+        result = await self.db.execute(select(UserSubscription).where(UserSubscription.user_id == user_id))
+        user_subscriptions = result.scalars().all()
         return user_subscriptions
 
     async def create_user_subscription(
@@ -104,7 +99,6 @@ class MeUserSubscriptionService:
             user_subscription_id: UUID,
     ) -> str | Exception:
         user_id = UUID(user['sub'])
-
         active_user_subscription = (
             await self.db.execute(select(UserSubscription)
                                   .where(UserSubscription.id == user_subscription_id,
@@ -142,19 +136,71 @@ class MeUserSubscriptionService:
         if refund_amount == 0:
             raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Refund amount equal to zero')
 
-        response = await self.billing_service.call_to_billing(
+        respond = await self.billing_service.call_to_billing(
             uri=billing_settings.refund_uri,
             payment_method_id=str(active_user_subscription.payment_method_id),
             subscription_id=str(active_user_subscription.id),
             amount=refund_amount,
         )
 
-        return response
+        return respond
+
+    async def activate_subscription(self, user_subscription_id):
+        user_subscription = (
+            await self.db.execute(select(UserSubscription)
+                                  .where(and_(UserSubscription.id == user_subscription_id,
+                                              or_(UserSubscription.status == SubscriptionStatus.AWAITING_PAYMENT,
+                                                  UserSubscription.status == SubscriptionStatus.AWAITING_RENEWAL)))
+                                  )
+        ).scalars().first()
+        if not user_subscription:
+            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST,
+                                detail='User subscription not found or does not have appropriate status')
+        today = date.today()
+        end_of_subscription = date(year=today.year + 1, month=today.month, day=today.day)
+        if not user_subscription.start_of_subscription:
+            await self.db.execute(update(UserSubscription)
+                                  .where(UserSubscription.id == user_subscription_id)
+                                  .values(status=SubscriptionStatus.ACTIVE,
+                                          start_of_subscription=today,
+                                          end_of_subscription=end_of_subscription))
+        else:
+            await self.db.execute(update(UserSubscription)
+                                  .where(UserSubscription.id == user_subscription_id)
+                                  .values(status=SubscriptionStatus.ACTIVE,
+                                          end_of_subscription=end_of_subscription))
+        await self.db.commit()
+
+    async def cancel_subscription(self, user_subscription_id):
+        user_subscription = (
+            await self.db.execute(select(UserSubscription)
+                                  .where(UserSubscription.id == user_subscription_id,
+                                         UserSubscription.status == SubscriptionStatus.AWAITING_PAYMENT))
+        ).scalars().first()
+        if not user_subscription:
+            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST,
+                                detail='User subscription not found or does not have awaiting_payments status')
+        today = date.today()
+        end_of_subscription = date(year=today.year + 1, month=today.month, day=today.day)
+        if not user_subscription.start_of_subscription:
+            await self.db.execute(update(UserSubscription)
+                                  .where(UserSubscription.id == user_subscription_id)
+                                  .values(status=SubscriptionStatus.ACTIVE,
+                                          start_of_subscription=today,
+                                          end_of_subscription=end_of_subscription))
+        else:
+            await self.db.execute(update(UserSubscription)
+                                  .where(UserSubscription.id == user_subscription_id)
+                                  .values(status=SubscriptionStatus.ACTIVE,
+                                          end_of_subscription=end_of_subscription))
+        await self.db.commit()
+
+    async def list_user_active_subscriptions(self, user_id, subscription_type_id):
+        pass
 
 
 @lru_cache()
-def get_me_user_subscription_service(
+def get_user_subscription_service(
         db: AsyncSession = Depends(get_session),
-        billing_service: BillingService = Depends(get_billing_service)
-) -> MeUserSubscriptionService:
-    return MeUserSubscriptionService(db, billing_service)
+) -> UserSubscriptionService:
+    return UserSubscriptionService(db)

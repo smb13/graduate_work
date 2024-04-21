@@ -6,8 +6,8 @@ erDiagram
         uuid id PK
         string name "Название подписки"
         string description "Текстовое описание"
-        decimal annual_price "Стоимость в год"
-        decimal monthly_price "Стоимость в месяц"
+        integer annual_price "Стоимость в год"
+        integer monthly_price "Стоимость в месяц"
         date start_of_sales "Начало продаж"
         date end_of_sales "Окончание продаж"
         datetime created_at "Создано"

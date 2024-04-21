@@ -1,8 +1,10 @@
 from http import HTTPStatus
+from typing import Sequence
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
+from models import UserSubscription
 from schemas.error import HttpExceptionModel
 from schemas.user_subscription import UserSubscriptionResponse, UrlResponse
 from services.access import security_jwt, check_access, Roles
@@ -25,10 +27,10 @@ router = APIRouter(redirect_slashes=False, prefix="/me/user_subscriptions", tags
 @check_access({Roles.user})
 async def create_user_subscription(
         subscription_type_id: int,
-        user_subscription_service: MeUserSubscriptionService = Depends(get_me_user_subscription_service),
+        me_user_subscription_service: MeUserSubscriptionService = Depends(get_me_user_subscription_service),
         user: dict = Depends(security_jwt),
 ) -> str | Exception:
-    return await user_subscription_service.create_user_subscription(
+    return await me_user_subscription_service.create_user_subscription(
         user=user,
         subscription_type_id=subscription_type_id
     )
@@ -36,7 +38,7 @@ async def create_user_subscription(
 
 @router.patch(
     '/{subscription_id}',
-    response_model=UserSubscriptionResponse,
+    response_model=str,
     summary='Пользователь отменяет подписку',
     status_code=HTTPStatus.OK,
     responses={
@@ -48,17 +50,14 @@ async def create_user_subscription(
 @check_access({Roles.user})
 async def cancel_user_subscription(
         user_subscription_id: UUID,
-        user_subscription_service: MeUserSubscriptionService = Depends(get_me_user_subscription_service),
+        me_user_subscription_service: MeUserSubscriptionService = Depends(get_me_user_subscription_service),
         user: dict = Depends(security_jwt),
-) -> UserSubscriptionResponse:
-    user_subscription = await (user_subscription_service.cancel_user_subscription(
+) -> str | Exception:
+    return await (me_user_subscription_service.cancel_user_subscription(
         user=user,
         user_subscription_id=user_subscription_id,
     )
     )
-    if not user_subscription:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Subscription type not found')
-    return user_subscription
 
 
 @router.get(
@@ -72,10 +71,10 @@ async def cancel_user_subscription(
 )
 @check_access({Roles.user})
 async def list_roles(
-        user_subscription_service: MeUserSubscriptionService = Depends(get_me_user_subscription_service),
+        me_user_subscription_service: MeUserSubscriptionService = Depends(get_me_user_subscription_service),
         user: dict = Depends(security_jwt),
-) -> list[UserSubscriptionResponse]:
-    return await user_subscription_service.list_user_subscriptions(user=user)
+) -> Sequence[UserSubscription]:
+    return await me_user_subscription_service.list_user_subscriptions(user=user)
 
 
 
