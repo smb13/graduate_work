@@ -8,11 +8,14 @@ from fastapi import Depends
 
 from core.config import settings
 from schemas.transaction import PaymentInternal
-from services.base import BasePaymentService
 
 
-class YooKassaPaymentService(BasePaymentService):
-    payment_client: YooKassa
+class YooKassaPaymentService:
+    def __init__(
+        self,
+        payment_client: YooKassa,
+    ) -> None:
+        self.payment_client = payment_client
 
     async def create_payment(
         self,
