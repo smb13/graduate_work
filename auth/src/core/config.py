@@ -49,6 +49,8 @@ class Settings(BaseSettings):
     jaeger_agent_port: int = 6831
     jaeger_to_console: bool = Field(alias="JAEGER_TO_CONSOLE", default=False)
 
+    service_subscriptions_api_base_path: str = Field(alias="SERVICE_SUBSCRIPTIONS_API_BASE_PATH", default="http://subscriptions")
+
 
 # Корень проекта
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
