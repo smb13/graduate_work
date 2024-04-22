@@ -1,5 +1,4 @@
 from abc import ABCMeta, abstractmethod
-from functools import lru_cache
 from typing import Any
 
 from authlib.integrations.starlette_client import OAuth

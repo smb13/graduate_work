@@ -4,7 +4,7 @@ from logging import config as logging_config
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-from billing.src.core.utils import get_base_url
+from core.utils import get_base_url
 from core.logger import LOGGING
 
 # Применяем настройки логирования

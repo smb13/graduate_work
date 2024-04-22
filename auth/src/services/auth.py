@@ -71,7 +71,7 @@ class AuthService(BaseService):
             # Сохранение в кэш
             await self.redis.set(
                 "subscriptions:" + str(user.id), orjson.dumps(payload['data']['subs']),
-                ex=settings.jwt_access_token_expires_minutes*60
+                ex=settings.jwt_access_token_expires_minutes * 60
             )
 
         token, _ = await generate_jwt_signed_token(**payload, expires_minutes=settings.jwt_access_token_expires_minutes)
