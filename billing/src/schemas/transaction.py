@@ -1,50 +1,107 @@
 import datetime as dt
+import uuid
 from decimal import Decimal
-from typing import TYPE_CHECKING
+from enum import Enum
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
-if TYPE_CHECKING:
-    from core.enums import CurrencyEnum, TransactionKindEnum, TransactionStateEnum
+from core.enums import CurrencyEnum, PaymentStatusEnum, TransactionKindEnum, TransactionProcessStateEnum
 
 
 class PaymentNewCreate(BaseModel):
     user_id: UUID
+    subscription_id: UUID
     description: str
-    amount: Decimal
-    currency: "CurrencyEnum"
+    amount: Decimal = Field(..., gt=0)  # Ensure amount is greater than 0
+    currency: CurrencyEnum
 
 
 class PaymentRenewCreate(BaseModel):
     user_id: UUID
+    subscription_id: UUID
     description: str
     amount: Decimal
-    currency: "CurrencyEnum"
+    currency: CurrencyEnum
     payment_method_id: UUID
 
 
 class RefundCreate(BaseModel):
     user_id: UUID
+    subscription_id: UUID
     description: str
     amount: Decimal
-    currency: "CurrencyEnum"
+    currency: CurrencyEnum
     payment_method_id: UUID
 
 
 class PaymentResponse(BaseModel):
     id: UUID
-    payment_method_id: UUID
-    refund_payment_id: UUID
+    subscription_id: UUID
+    payment_method_id: UUID | None = None
+    refund_payment_id: UUID | None = None
     user_id: UUID
-    kind: "TransactionKindEnum"
-    state: "TransactionStateEnum"
+    kind: TransactionKindEnum
+    process_state: TransactionProcessStateEnum
+    status: PaymentStatusEnum
     description: str
     amount: Decimal
-    currency: "CurrencyEnum"
-    dt_created: dt.datetime
-    dt_changed: dt.datetime
+    currency: CurrencyEnum
+    created_at: dt.datetime
+    changed_at: dt.datetime
+    payment_created_at: dt.datetime | None
     cnt_attempts: int
-    dt_last_attempt: dt.datetime
+    last_attempt_at: dt.datetime | None = None
+    confirmation_url: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ConfirmationType(str, Enum):
+    redirect = "redirect"
+
+
+class PaymentAmount(BaseModel):
+    """
+    Payment amount
+    """
+
+    value: int | float
+    currency: CurrencyEnum
+
+
+class PaymentMethod(BaseModel):
+    """
+    Payment method
+    """
+
+    id: uuid.UUID
+    saved: bool
+
+
+class Confirmation(BaseModel):
+    """
+    Confirmation
+    """
+
+    type: ConfirmationType
+    url: str | None
+
+
+class PaymentInternal(BaseModel):
+    """
+    Payment
+    """
+
+    id: uuid.UUID
+    status: PaymentStatusEnum
+    amount: PaymentAmount
+    description: str
+    payment_method: PaymentMethod | None = None
+    created_at: dt.datetime
+    confirmation: Confirmation | None = None
+    test: bool
+    refunded_amount: PaymentAmount | None = None
+    paid: bool
+    cancellation_details: dict | None = None
+    metadata: dict | None = None

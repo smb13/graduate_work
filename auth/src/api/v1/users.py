@@ -104,14 +104,14 @@ async def remove_roles(
     "",
     response_model=UserResponse,
     status_code=HTTPStatus.CREATED,
-    summary="Create the new user",
+    summary="Create a new user",
     dependencies=[Depends(check_permissions(ActionEnum.user_create))],
 )
 async def create_user(
     user_create: UserCreate,
     users_service: UsersService = Depends(get_users_service),
 ) -> UserResponse:
-    """Create the new user."""
+    """Create a new user."""
 
     return await users_service.create(user_create)
 

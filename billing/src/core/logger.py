@@ -6,7 +6,7 @@ from sentry_sdk.integrations.logging import LoggingIntegration
 
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 LOG_DEFAULT_HANDLERS = ["console"]
-STREAM_HANDLER = "logging.StreamHandler()"
+STREAM_HANDLER = "logging.StreamHandler"
 
 # Инициализация Sentry SDK если есть env SENTRY_DSN
 if SENTRY_DSN := os.getenv("SENTRY_DSN"):
