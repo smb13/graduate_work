@@ -59,9 +59,8 @@ async def process_recurring_payments() -> None:
                     raise ValueError(f"Unexpected payment status: {payment.status}")
 
 
-def process_recurring_payments_job() -> None:
+async def process_recurring_payments_job() -> None:
     """Process a Recurring Payment."""
 
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(process_recurring_payments())
-    loop.close()
+    await loop.create_task(process_recurring_payments())
