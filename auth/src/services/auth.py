@@ -35,8 +35,7 @@ oauth2_scheme = OAuth2PasswordBearer(
 
 
 class AuthService(BaseService):
-    @staticmethod
-    async def make_access_token(user: User, role_codes: Sequence[str]) -> str:
+    async def make_access_token(self, user: User, role_codes: Sequence[str]) -> str:
         payload = {
             'data': {
                 "sub": str(user.id), "roles": role_codes, "type": "access"
@@ -44,10 +43,16 @@ class AuthService(BaseService):
             'secret_key': settings.jwt_access_token_secret_key
         }
 
-        # TODO: Получение подписок из кэша.
-        subs = None
+        # Получение подписок из кэша.
+        subs = await self.redis.get("subscriptions:" + str(user.id))
+        if subs:
+            try:
+                payload["data"]["sub"] = orjson.loads(subs)
+            except ValueError:
+                subs = None
 
         if not subs:
+            print('\nNO CACHE\n')
             # Создание временного токена.
             token, _ = await generate_jwt_signed_token(**payload, expires_minutes=1)
 
@@ -63,7 +68,11 @@ class AuthService(BaseService):
                 print(f'\n{e}\n')
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
-            # TODO: Сохранение в кэш
+            # Сохранение в кэш
+            await self.redis.set(
+                "subscriptions:" + str(user.id), orjson.dumps(payload['data']['subs']),
+                ex=settings.jwt_access_token_expires_minutes*60
+            )
 
         token, _ = await generate_jwt_signed_token(**payload, expires_minutes=settings.jwt_access_token_expires_minutes)
         return token
