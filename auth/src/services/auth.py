@@ -55,7 +55,7 @@ class AuthService(BaseService):
             try:
                 async with aiohttp.ClientSession(headers={"Authorization": f"Bearer {token}"}) as session:
                     async with session.get(
-                            f"{settings.service_subscriptions_api_base_path}/api/v1/user_subscriptions",
+                            f"{settings.subscription_service_base_url}/api/v1/user_subscriptions",
                             params={'user_id': str(user.id)}
                     ) as response:
                         payload['data']['subs'] = [sub['type_id'] for sub in await response.json()]

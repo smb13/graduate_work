@@ -4,6 +4,7 @@ from logging import config as logging_config
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
+from billing.src.core.utils import get_base_url
 from core.logger import LOGGING
 
 # Применяем настройки логирования
@@ -49,7 +50,18 @@ class Settings(BaseSettings):
     jaeger_agent_port: int = 6831
     jaeger_to_console: bool = Field(alias="JAEGER_TO_CONSOLE", default=False)
 
-    service_subscriptions_api_base_path: str = Field(alias="SERVICE_SUBSCRIPTIONS_API_BASE_PATH", default="http://subscriptions")
+    subscription_service_host: str = "subscription"
+    subscription_service_port: str = "8000"
+
+    local_user_email: str = ""
+    local_user_password: str = ""
+
+    @property
+    def subscription_service_base_url(self) -> str:
+        return get_base_url(
+            settings.subscription_service_host,
+            settings.subscription_service_port,
+        )
 
 
 # Корень проекта
