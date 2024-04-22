@@ -5,6 +5,7 @@ from http import HTTPStatus
 import uvicorn
 from aioyookassa import YooKassa
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 from authlib.integrations import httpx_client
 from clients import alchemy, redis, subscription
 from clients.yookassa import client as yookassa
@@ -59,9 +60,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     scheduler.start()
     scheduler.add_job(
         process_recurring_payments_job,
-        "cron",
-        hour=15,
-        minute=0,
+        CronTrigger.from_crontab("15 0 * * *"),
     )
 
     # Импорт моделей необходим для их автоматического создания
