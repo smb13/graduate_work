@@ -2,10 +2,10 @@ from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
 from http import HTTPStatus
 
-import httpx
 import uvicorn
 from aioyookassa import YooKassa
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from authlib.integrations import httpx_client
 from clients import alchemy, redis, subscription
 from clients.yookassa import client as yookassa
 from fastapi import FastAPI, Request, Response
@@ -18,7 +18,6 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from api.routers import all_v1_routers
 from core.config import settings
 from core.tracer import configure_tracer
-from core.utils import get_base_url
 
 description = """Проведение платежей и автоплатежей, получение статуса оплаты, отмена оплаты."""
 
@@ -51,11 +50,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         shop_id=settings.yookassa_account_id,
     )
 
-    subscription.client = httpx.AsyncClient(
-        base_url=get_base_url(
-            settings.subscription_service_host,
-            settings.subscription_service_port,
-        ),
+    subscription.client = httpx_client.AsyncOAuth2Client(
+        base_url=settings.subscription_service_base_url,
+        token_endpoint_auth_method="client_secret_post",
     )
 
     scheduler = AsyncIOScheduler()
