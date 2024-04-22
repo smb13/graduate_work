@@ -4,14 +4,16 @@ from http import HTTPStatus
 
 import uvicorn
 from aioyookassa import YooKassa
-from clients import alchemy, redis, yookassa
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from authlib.integrations import httpx_client
+from clients import alchemy, redis, subscription
+from clients.yookassa import client as yookassa
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import ORJSONResponse
 from fastapi_pagination import add_pagination
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from redis.asyncio import Redis
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from api.routers import all_v1_routers
 from core.config import settings
@@ -22,7 +24,13 @@ description = """Проведение платежей и автоплатеже
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
-    redis.redis = Redis(host=settings.redis_host, port=settings.redis_port, db=settings.redis_db)
+    from jobs.process_payments import process_recurring_payments_job
+
+    redis.redis = Redis(
+        host=settings.redis_host,
+        port=settings.redis_port,
+        db=settings.redis_db,
+    )
 
     dsn = "postgresql+asyncpg://{user}:{password}@{host}:{port}/{db_name}".format(
         user=settings.postgres_user,
@@ -32,11 +40,28 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         db_name=settings.postgres_auth_db,
     )
     alchemy.engine = create_async_engine(dsn, echo=True, future=True)
-    alchemy.AsyncSessionLocal = sessionmaker(alchemy.engine, class_=AsyncSession, expire_on_commit=False)
+    alchemy.AsyncSessionLocal = async_sessionmaker(
+        alchemy.engine,
+        expire_on_commit=False,
+    )
 
     yookassa.yookassa = YooKassa(
         api_key=settings.yookassa_secret_key,
         shop_id=settings.yookassa_account_id,
+    )
+
+    subscription.client = httpx_client.AsyncOAuth2Client(
+        base_url=settings.subscription_service_base_url,
+        token_endpoint_auth_method="client_secret_post",
+    )
+
+    scheduler = AsyncIOScheduler()
+    scheduler.start()
+    scheduler.add_job(
+        process_recurring_payments_job,
+        "cron",
+        hour=15,
+        minute=0,
     )
 
     # Импорт моделей необходим для их автоматического создания
@@ -48,6 +73,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     yield
 
     await redis.redis.close()
+
+    await subscription.client.aclose()
+
+    scheduler.shutdown()
 
     # Для очистки базы данных при выключении сервера if settings.debug: await alchemy.purge_database()
 

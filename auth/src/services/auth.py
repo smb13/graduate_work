@@ -9,7 +9,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from fastapi_pagination.cursor import CursorPage
-from fastapi_pagination.ext.async_sqlalchemy import paginate
+from fastapi_pagination.ext.sqlalchemy import paginate
 from orjson import orjson
 from redis.asyncio import Redis
 from sqlalchemy import select

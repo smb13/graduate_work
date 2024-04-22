@@ -3,23 +3,27 @@ from uuid import UUID
 
 from aioyookassa.types import Confirmation
 from aioyookassa.types.payment import PaymentAmount
-from clients.yookassa.client import get_yookassa, YooKassa
+from clients.yookassa.client import YooKassa, get_yookassa
 from fastapi import Depends
 
 from core.config import settings
-from services.base import BasePaymentService
+from schemas.transaction import PaymentInternal
 
 
-class YooKassaPaymentService(BasePaymentService):
-    payment_client: YooKassa
+class YooKassaPaymentService:
+    def __init__(
+        self,
+        payment_client: YooKassa,
+    ) -> None:
+        self.payment_client = payment_client
 
-    async def create_payment_redirect(
+    async def create_payment(
         self,
         amount: Decimal,
         currency: str,
         description: str,
-        payment_method_id: UUID = None,
-    ) -> str:
+        payment_method_id: UUID | None = None,
+    ) -> PaymentInternal:
         confirmation = Confirmation(
             type="redirect",
             return_url=settings.payment_return_url,
@@ -34,8 +38,9 @@ class YooKassaPaymentService(BasePaymentService):
             description=description,
             payment_method_id=payment_method_id,
             save_payment_method=not payment_method_id,
+            capture=True,
         )
-        return payment.confirmation.url
+        return PaymentInternal.model_validate(payment.model_dump())
 
     async def create_refund(
         self,
@@ -56,7 +61,7 @@ class YooKassaPaymentService(BasePaymentService):
         return payment.confirmation.url
 
 
-def get_transaction_service(
+def get_yookassa_payment_service(
     payment_client: YooKassa = Depends(get_yookassa),
 ) -> YooKassaPaymentService:
     return YooKassaPaymentService(payment_client=payment_client)
