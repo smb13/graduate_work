@@ -1,10 +1,9 @@
 import uuid
-from functools import lru_cache
 from http import HTTPStatus
 
 from fastapi import Depends, HTTPException
 from fastapi_pagination.cursor import CursorPage
-from fastapi_pagination.ext.async_sqlalchemy import paginate
+from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,10 +17,10 @@ class UsersService(BaseService):
     async def retrieve(self, *, username: str | None = None, user_id: uuid.UUID | None = None) -> User | None:
         """Retrieves User from PostgreSQL using SQLAlchemy"""
         if username:
-            user = await self.session.scalars(select(User).where(User.login == username))
+            user = await self.session.scalars(select(User).where(User.login == username).limit(1))
             return user.first()
         if user_id:
-            user = await self.session.scalars(select(User).where(User.id == user_id))
+            user = await self.session.scalars(select(User).where(User.id == user_id).limit(1))
             return user.first()
         return None
 
@@ -62,7 +61,7 @@ class UsersService(BaseService):
 
     async def authenticate(self, login: str, password: str) -> User | None:
         """Authenticates User in PostgreSQL using SQLAlchemy"""
-        user = await self.session.scalars(select(User).where(User.login == login))
+        user = await self.session.scalars(select(User).where(User.login == login).limit(1))
         user = user.first()
         if not user or not user.check_password(password):
             return None
@@ -75,8 +74,14 @@ class UsersService(BaseService):
         return user
 
 
-@lru_cache
 def get_users_service(
     alchemy: AsyncSession = Depends(get_session),
 ) -> UsersService:
+    """Gets UsersService instance for dependencies injection.
+
+    About @lru_cache:
+    Each request should get a fresh AsyncSession to avoid sharing transactions
+    and to maintain the integrity of the session's state within each request's lifecycle.
+    Therefore, caching a service that depends on such a session is not recommended."""
+
     return UsersService(session=alchemy, redis=None)

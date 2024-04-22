@@ -1,6 +1,5 @@
 from collections.abc import Sequence
 from http import HTTPStatus
-from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -17,21 +16,24 @@ from services.users import UsersService, get_users_service
 router = APIRouter()
 
 
+user_not_found_exc = HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="User not found")
+
+
 @router.get(
     "/{user_id}",
     response_model=UserResponse,
     summary="Retrieve a user",
+    dependencies=[Depends(check_permissions(ActionEnum.user_read))],
 )
 async def user_details(
     user_id: UUID,
-    current_user: Annotated[User, Depends(check_permissions(ActionEnum.user_read))],
     users_service: UsersService = Depends(get_users_service),
 ) -> UserResponse:
     """Retrieve an item with all the information."""
 
     user: User | None = await users_service.retrieve(user_id=user_id)
     if not user:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="User not found")
+        raise user_not_found_exc
 
     return user
 
@@ -40,10 +42,10 @@ async def user_details(
     "/{user_id}/roles",
     response_model=list[RoleResponse],
     summary="Show user roles",
+    dependencies=[Depends(check_permissions(ActionEnum.role_binding_read))],
 )
 async def user_roles(
     user_id: UUID,
-    current_user: Annotated[User, Depends(check_permissions(ActionEnum.role_binding_read))],
     users_service: UsersService = Depends(get_users_service),
     roles_service: RolesService = Depends(get_roles_service),
 ) -> Sequence[RoleResponse]:
@@ -51,7 +53,7 @@ async def user_roles(
 
     user: User | None = await users_service.retrieve(user_id=user_id)
     if not user:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="user not found")
+        raise user_not_found_exc
 
     return await roles_service.get_roles_by_user(user=user)
 
@@ -60,11 +62,11 @@ async def user_roles(
     "/{user_id}/add_roles",
     response_model=list[RoleResponse],
     summary="Add roles to user",
+    dependencies=[Depends(check_permissions(ActionEnum.role_binding_create))],
 )
 async def add_roles(
     user_id: UUID,
     role_ids: list[UUID],
-    current_user: Annotated[User, Depends(check_permissions(ActionEnum.role_binding_create))],
     users_service: UsersService = Depends(get_users_service),
     roles_service: RolesService = Depends(get_roles_service),
 ) -> Sequence[RoleResponse]:
@@ -72,7 +74,7 @@ async def add_roles(
 
     user: User | None = await users_service.retrieve(user_id=user_id)
     if not user:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="user not found")
+        raise user_not_found_exc
 
     return await roles_service.add_roles_to_user(user=user, role_ids=role_ids)
 
@@ -81,11 +83,11 @@ async def add_roles(
     "/{user_id}/remove_roles",
     response_model=list[RoleResponse],
     summary="Remove roles to user",
+    dependencies=[Depends(check_permissions(ActionEnum.role_binding_delete))],
 )
 async def remove_roles(
     user_id: UUID,
     role_ids: list[UUID],
-    current_user: Annotated[User, Depends(check_permissions(ActionEnum.role_binding_delete))],
     users_service: UsersService = Depends(get_users_service),
     roles_service: RolesService = Depends(get_roles_service),
 ) -> Sequence[RoleResponse]:
@@ -93,7 +95,7 @@ async def remove_roles(
 
     user: User | None = await users_service.retrieve(user_id=user_id)
     if not user:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="user not found")
+        raise user_not_found_exc
 
     return await roles_service.remove_roles_from_user(user=user, role_ids=role_ids)
 
@@ -102,14 +104,14 @@ async def remove_roles(
     "",
     response_model=UserResponse,
     status_code=HTTPStatus.CREATED,
-    summary="Create the new user",
+    summary="Create a new user",
+    dependencies=[Depends(check_permissions(ActionEnum.user_create))],
 )
 async def create_user(
     user_create: UserCreate,
-    current_user: Annotated[User, Depends(check_permissions(ActionEnum.user_create))],
     users_service: UsersService = Depends(get_users_service),
 ) -> UserResponse:
-    """Create the new user."""
+    """Create a new user."""
 
     return await users_service.create(user_create)
 
@@ -118,9 +120,9 @@ async def create_user(
     "",
     response_model=CursorPage[UserResponse],
     summary="Show the list of users",
+    dependencies=[Depends(check_permissions(ActionEnum.user_read))],
 )
 async def users_list(
-    current_user: Annotated[User, Depends(check_permissions(ActionEnum.user_read))],
     users_service: UsersService = Depends(get_users_service),
 ) -> CursorPage[UserResponse]:
     """List users with brief information."""

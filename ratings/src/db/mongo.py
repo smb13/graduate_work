@@ -15,4 +15,7 @@ def connect(dsn: str) -> AgnosticClient:
 
 
 async def get_mongo() -> AgnosticClient:
+    if not mongo:
+        raise RuntimeError("Mongo is not initialized")
+
     return mongo

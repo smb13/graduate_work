@@ -4,13 +4,12 @@ import hmac
 import uuid
 from base64 import urlsafe_b64decode, urlsafe_b64encode
 from collections.abc import Callable, Sequence
-from functools import lru_cache
 from typing import Annotated
 
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from fastapi_pagination.cursor import CursorPage
-from fastapi_pagination.ext.async_sqlalchemy import paginate
+from fastapi_pagination.ext.sqlalchemy import paginate
 from orjson import orjson
 from redis.asyncio import Redis
 from sqlalchemy import select
@@ -38,7 +37,7 @@ class AuthService(BaseService):
     @staticmethod
     async def make_access_token(user: User, role_codes: Sequence[str]) -> str:
         token, _ = await generate_jwt_signed_token(
-            data={"sub": str(user.id), "roles": role_codes},
+            data={"sub": str(user.id), "roles": role_codes, "type": "access"},
             expires_minutes=settings.jwt_access_token_expires_minutes,
             secret_key=settings.jwt_access_token_secret_key,
         )
@@ -47,7 +46,7 @@ class AuthService(BaseService):
     async def make_refresh_token(self, user: User) -> str:
         jti = uuid.uuid4()
         refresh_token, exp = await generate_jwt_signed_token(
-            data={"sub": str(user.id), "jti": str(jti)},
+            data={"sub": str(user.id), "jti": str(jti), "type": "refresh"},
             expires_minutes=settings.jwt_refresh_token_expires_minutes,
             secret_key=settings.jwt_refresh_token_secret_key,
         )
@@ -87,7 +86,7 @@ class AuthService(BaseService):
         if not jwt_id:
             return
 
-        token = await self.session.scalars(select(RefreshToken).where(RefreshToken.jwt_id == jwt_id))
+        token = await self.session.scalars(select(RefreshToken).where(RefreshToken.jwt_id == jwt_id).limit(1))
         token = token.first()
         if token:
             await self.session.delete(token)
@@ -186,11 +185,17 @@ async def get_jwt_token_payload(jwt_token: str) -> JWTTokenPayload | None:
     return JWTTokenPayload(**payload)
 
 
-@lru_cache
 def get_auth_service(
     alchemy: AsyncSession = Depends(get_session),
     redis: Redis = Depends(get_redis),
 ) -> AuthService:
+    """Gets AuthService instance for dependencies injection.
+
+    About @lru_cache:
+    Each request should get a fresh AsyncSession to avoid sharing transactions
+    and to maintain the integrity of the session's state within each request's lifecycle.
+    Therefore, caching a service that depends on such a session is not recommended."""
+
     return AuthService(session=alchemy, redis=redis)
 
 

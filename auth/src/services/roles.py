@@ -1,14 +1,14 @@
 import uuid
 from collections.abc import Sequence
 from copy import copy
-from functools import lru_cache
 from http import HTTPStatus
 
 from fastapi import Depends, HTTPException
 from fastapi_pagination.cursor import CursorPage
-from fastapi_pagination.ext.async_sqlalchemy import paginate
+from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from core.enums import ActionEnum, SystemRolesEnum
 from db.alchemy import get_session
@@ -21,13 +21,14 @@ from services.base import BaseService
 class RolesService(BaseService):
     async def retrieve(self, *, code: str | None = None, role_id: uuid.UUID | None = None) -> Role | None:
         """Retrieves Role from PostgreSQL using SQLAlchemy"""
+        query = select(Role).options(selectinload(Role.permissions))
         if code:
-            role = await self.session.scalars(select(Role).where(Role.code == code))
-            return role.first()
-        if role_id:
-            role = await self.session.scalars(select(Role).where(Role.id == role_id))
-            return role.first()
-        return None
+            result = await self.session.scalars(query.where(Role.code == code).limit(1))
+        elif role_id:
+            result = await self.session.scalars(query.where(Role.id == role_id).limit(1))
+        else:
+            return None
+        return result.first()
 
     async def create(self, role_create: role_schemas.RoleCreate) -> Role:
         """Creates Role with Permissions in PostgreSQL using SQLAlchemy"""
@@ -177,8 +178,14 @@ class RolesService(BaseService):
         return await self.create(new_role)
 
 
-@lru_cache
 def get_roles_service(
     alchemy: AsyncSession = Depends(get_session),
 ) -> RolesService:
+    """Gets RolesService instance for dependencies injection.
+
+    About @lru_cache:
+    Each request should get a fresh AsyncSession to avoid sharing transactions
+    and to maintain the integrity of the session's state within each request's lifecycle.
+    Therefore, caching a service that depends on such a session is not recommended."""
+
     return RolesService(session=alchemy, redis=None)

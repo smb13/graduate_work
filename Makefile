@@ -242,6 +242,11 @@ epk_workers_dev:
 websocket_sender: #
 	docker compose $(DOCKER_COMPOSE_DEV) up --build -d websocket-sender
 
+# Billing service
+
+billing_dev: #
+	docker compose $(DOCKER_COMPOSE_DEV) up --build -d billing
+
 # Rabbit MQ
 
 rabbit: # Запустить брокер RabbitMQ

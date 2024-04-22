@@ -176,6 +176,15 @@ services       :
       network: host
     command: python /app/src/main.py
 
+  billing:
+    <<: *base-settings
+    build:
+      context: ./billing
+      network: host
+    environment:
+      PORT: 8000
+      OTEL_SERVICE_NAME: billing
+
   rabbit:
     image: rabbitmq:3.13-management
     <<: *base-settings

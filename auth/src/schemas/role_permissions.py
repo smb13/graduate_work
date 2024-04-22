@@ -3,6 +3,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
+from core.enums import ActionEnum
+
 
 class ScopeCreate(BaseModel):
     code: str
@@ -22,7 +24,7 @@ class ScopeResponse(BaseModel):
 
 
 class PermissionAdd(BaseModel):
-    action: str
+    action: ActionEnum
 
 
 class RoleCreate(BaseModel):
@@ -39,12 +41,19 @@ class RoleDelete(BaseModel):
     id: UUID
 
 
+class PermissionResponse(BaseModel):
+    action: ActionEnum
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class RoleResponse(BaseModel):
     id: UUID
     code: str
     name: str
     created_at: dt.datetime
     updated_at: dt.datetime
+    permissions: list[PermissionResponse]
 
     model_config = ConfigDict(from_attributes=True)
 

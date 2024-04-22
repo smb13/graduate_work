@@ -27,7 +27,7 @@ sequenceDiagram
     SubDB->>SubAPI: ID подписки
 
     SubAPI->>BillAPI: Сформировать Платёж за подписку X на сумму Y
-    Note right of SubAPI: POST /api/v1/payments/create
+    Note right of SubAPI: POST /api/v1/payments/new
     BillAPI->>YooKassa: Создать платёж и сохранить способ оплаты
     YooKassa->>YooKassa: Генерация ссылки на оплату
     YooKassa->>BillAPI: Ссылка на страницу оплаты
