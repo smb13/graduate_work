@@ -1,13 +1,13 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    import httpx
+    from authlib.integrations import httpx_client
 
 
-client: "httpx.AsyncClient | None" = None
+client: "httpx_client.AsyncOAuth2Client | None" = None
 
 
-async def get_client() -> "httpx.AsyncClient":
+async def get_client() -> "httpx_client.AsyncOAuth2Client":
     if not client:
         raise RuntimeError("Subscriptions Client is not initialized")
 

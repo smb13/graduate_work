@@ -19,6 +19,10 @@ class Transaction(Base):
         unique=True,
         nullable=False,
     )
+    subscription_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=False,
+    )
     external_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,

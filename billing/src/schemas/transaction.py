@@ -11,6 +11,7 @@ from core.enums import CurrencyEnum, PaymentStatusEnum, TransactionKindEnum, Tra
 
 class PaymentNewCreate(BaseModel):
     user_id: UUID
+    subscription_id: UUID
     description: str
     amount: Decimal = Field(..., gt=0)  # Ensure amount is greater than 0
     currency: CurrencyEnum
@@ -18,6 +19,7 @@ class PaymentNewCreate(BaseModel):
 
 class PaymentRenewCreate(BaseModel):
     user_id: UUID
+    subscription_id: UUID
     description: str
     amount: Decimal
     currency: CurrencyEnum
@@ -26,6 +28,7 @@ class PaymentRenewCreate(BaseModel):
 
 class RefundCreate(BaseModel):
     user_id: UUID
+    subscription_id: UUID
     description: str
     amount: Decimal
     currency: CurrencyEnum
@@ -34,6 +37,7 @@ class RefundCreate(BaseModel):
 
 class PaymentResponse(BaseModel):
     id: UUID
+    subscription_id: UUID
     payment_method_id: UUID | None = None
     refund_payment_id: UUID | None = None
     user_id: UUID

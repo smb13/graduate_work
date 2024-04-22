@@ -42,6 +42,7 @@ async def payment_new_create(
         raise ValueError("Payment status is not pending")
 
     transaction = await transaction_service.payment_new_create(
+        subscription_id=payment_new.subscription_id,
         user_id=payment_new.user_id,
         description=payment_new.description,
         amount=payment_new.amount,
@@ -55,6 +56,7 @@ async def payment_new_create(
 
     return PaymentResponse(
         id=transaction.id,
+        subscription_id=transaction.subscription_id,
         payment_method_id=transaction.payment_method_id,
         user_id=transaction.user_id,
         kind=transaction.kind,
@@ -89,6 +91,7 @@ async def payment_renew_create(
     Confirmation by user is not required"""
 
     transaction = await transaction_service.payment_renew_create(
+        subscription_id=payment_renew.subscription_id,
         user_id=payment_renew.user_id,
         description=payment_renew.description,
         amount=payment_renew.amount,
@@ -99,6 +102,7 @@ async def payment_renew_create(
 
     return PaymentResponse(
         id=transaction.id,
+        subscription_id=transaction.subscription_id,
         payment_method_id=transaction.payment_method_id,
         user_id=transaction.user_id,
         kind=transaction.kind,
@@ -114,21 +118,23 @@ async def payment_renew_create(
 @router.get(
     "",
     response_model=CursorPage[PaymentResponse],
-    summary="Show the list of transactions",
+    summary="Show the list of Transactions",
     dependencies=[Depends(check_permissions(SystemRolesEnum.admin))],
 )
 async def users_list(
+    subscription_id: uuid.UUID | None = None,
     user_id: uuid.UUID | None = None,
     payment_method_id: uuid.UUID | None = None,
     kind: TransactionKindEnum | None = None,
-    state: PaymentStatusEnum | None = None,
+    process_state: TransactionProcessStateEnum | None = None,
     transaction_service: TransactionService = Depends(get_transaction_service),
 ) -> CursorPage[Transaction]:
     """List Transactions."""
 
     return await transaction_service.list_transactions_paginated(
+        subscription_id=subscription_id,
         user_id=user_id,
         payment_method_id=payment_method_id,
         kind=kind,
-        state=state,
+        process_state=process_state,
     )

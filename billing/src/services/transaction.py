@@ -11,7 +11,7 @@ from redis.asyncio import Redis
 from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.enums import CurrencyEnum, PaymentStatusEnum, TransactionKindEnum, TransactionProcessStateEnum
+from core.enums import CurrencyEnum, TransactionKindEnum, TransactionProcessStateEnum
 from models.transaction import Transaction
 from services.base import BaseDBService
 
@@ -19,6 +19,7 @@ from services.base import BaseDBService
 class TransactionService(BaseDBService):
     async def payment_new_create(
         self,
+        subscription_id: uuid.UUID,
         user_id: uuid.UUID,
         description: str,
         amount: Decimal,
@@ -31,6 +32,7 @@ class TransactionService(BaseDBService):
     ) -> Transaction:
         """Creates a new payment transaction."""
         transaction = Transaction(
+            subscription_id=subscription_id,
             user_id=user_id,
             description=description,
             amount=amount,
@@ -51,6 +53,7 @@ class TransactionService(BaseDBService):
 
     async def payment_renew_create(
         self,
+        subscription_id: uuid.UUID,
         user_id: uuid.UUID,
         description: str,
         amount: Decimal,
@@ -60,6 +63,7 @@ class TransactionService(BaseDBService):
     ) -> Transaction:
         """Creates a new payment transaction."""
         transaction = Transaction(
+            subscription_id=subscription_id,
             user_id=user_id,
             description=description,
             amount=amount,
@@ -103,15 +107,15 @@ class TransactionService(BaseDBService):
     async def payment_get_for_refund(
         self,
         user_id: uuid.UUID,
-        payment_method_id: uuid.UUID,
+        subscription_id: uuid.UUID,
     ) -> Transaction | None:
-        """Gets last successful payment for payment_method_id."""
+        """Gets last successful payment for subscription_id."""
         payment_to_refund = await self.session.scalars(
             select(Transaction)
             .where(Transaction.user_id == user_id)
-            .where(Transaction.payment_method_id == payment_method_id)
+            .where(Transaction.subscription_id == subscription_id)
             .where(Transaction.kind == TransactionKindEnum.payment)
-            .where(Transaction.state == PaymentStatusEnum.succeeded)
+            .where(Transaction.process_state == TransactionProcessStateEnum.succeeded)
             .order_by(Transaction.created_at.desc())
             .limit(1),
         )
@@ -124,6 +128,7 @@ class TransactionService(BaseDBService):
 
     async def payment_refund_create(
         self,
+        subscription_id: uuid.UUID,
         user_id: uuid.UUID,
         description: str,
         amount: Decimal,
@@ -134,12 +139,13 @@ class TransactionService(BaseDBService):
         """Creates a new refund transaction."""
 
         transaction = Transaction(
+            subscription_id=subscription_id,
             user_id=user_id,
             description=description,
             amount=amount,
             currency=currency,
             kind=TransactionKindEnum.refund,
-            state=PaymentStatusEnum.pending,
+            process_state=TransactionProcessStateEnum.succeeded,
             payment_method_id=payment_method_id,
             refund_payment_id=payment_to_refund_id,
         )
@@ -151,6 +157,7 @@ class TransactionService(BaseDBService):
 
     async def list_transactions_paginated(
         self,
+        subscription_id: uuid.UUID | None = None,
         user_id: uuid.UUID | None = None,
         payment_method_id: uuid.UUID | None = None,
         kind: TransactionKindEnum | None = None,
@@ -160,6 +167,7 @@ class TransactionService(BaseDBService):
     ) -> CursorPage[Transaction]:
         """List transactions."""
         transactions = await self.list_transactions_query(
+            subscription_id=subscription_id,
             user_id=user_id,
             payment_method_id=payment_method_id,
             kind=kind,
@@ -171,6 +179,7 @@ class TransactionService(BaseDBService):
 
     @staticmethod
     async def list_transactions_query(  # noqa: C901
+        subscription_id: uuid.UUID | None = None,
         user_id: uuid.UUID | None = None,
         payment_method_id: uuid.UUID | None = None,
         kind: TransactionKindEnum | None = None,
@@ -181,6 +190,8 @@ class TransactionService(BaseDBService):
         """List transactions Query."""
         query = select(Transaction).order_by(Transaction.created_at.desc())
 
+        if subscription_id:
+            query = query.where(Transaction.subscription_id == subscription_id)
         if user_id:
             query = query.where(Transaction.user_id == user_id)
         if payment_method_id:
