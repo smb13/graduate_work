@@ -4,6 +4,7 @@
 erDiagram
     transaction["Transaction"] {
         uuid id PK "ID транзакции"
+        uuid subscription_id "ID подписки пользователя"
         uuid external_id "ID транзакции у партнёра"
         uuid payment_method_id "Идентификатор сохраненного способа оплаты"
         uuid refund_payment_id "Внешний ID платежа по которому возврат"
