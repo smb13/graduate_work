@@ -1,5 +1,4 @@
 import uuid
-from functools import lru_cache
 from http import HTTPStatus
 
 from fastapi import Depends, HTTPException

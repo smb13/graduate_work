@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from typing import Any
 
 import backoff
 import jinja2
@@ -15,163 +16,263 @@ from core.logger import logger
 
 
 class DataTransform:
+    """Класс-этапа трансформации данных."""
+
     @coroutine
     @backoff.on_exception(backoff.expo, Exception, logger=logger, max_tries=settings.backoff_max_tries)
-    def run(
-        self,
-        next_node: Generator,
-    ) -> Generator[None, list[dict[str, str | ModelsSchemas]], None]:
-        while rmq_messages := (yield):  # type: ignore
-            notification_messages = []
+    def run(self, next_node: Generator) -> Generator[None, list[dict[str, str | ModelsSchemas]], None]:
+        """Запуск корутины."""
+
+        while rmq_messages := (yield):
+            notification_messages: list[dict[str, Any]] = []
             logger.info("Start data transformation ...")
-            events_admin_request = EventsAdminRequest()
-            auth_request = AuthRequest()
             for rmq_message in rmq_messages:
-                message = rmq_message.get("message").message
-                rmq_message.get("delivery_tag")
+                self.process_message(rmq_message, notification_messages)
+            logger.info(
+                f"{len(rmq_messages)} messages was transformed to "
+                f"{len(notification_messages)} and was send to load to notification service...",
+            )
+            next_node.send(notification_messages)
 
-                match rmq_message.get("type"):
-                    case RmqQueue.PUSH_REVIEW_LIKE.value | RmqQueue.PUSH_GENERAL_NOTICE.value:
-                        _type = ChannelType.PUSH
-                    case RmqQueue.EMAIL_WEEKLY_BOOKMARKS.value | RmqQueue.EMAIL_GENERAL_NOTICE.value:
-                        _type = ChannelType.EMAIL
-                    case _:
-                        continue
+    def process_message(self, rmq_message: ModelsSchemas, notification_messages: list[dict[str, Any]]) -> None:
+        """Получение и обработка сообщений."""
 
-                notification_id = message.notification_id
+        message = rmq_message.get("message").message
+        rmq_message.get("delivery_tag")
+        _type = self.determine_message_type(rmq_message.get("type"))
 
-                text = message.text
+        if not _type:
+            return
 
-                subject = message.subject
-                try:
-                    user_id = message.user_id
-                except Exception:
-                    user_id = None
+        notification_id, text, subject, user_id = (
+            message.notification_id,
+            message.text,
+            message.subject,
+            self.extract_user_id(message),
+        )
 
-                users_data = []
-                # если user_id непустой, то отправка одному пользователю
-                if user_id:
-                    try:
-                        email, first_name, last_name = auth_request.get_user_details(user_id=user_id)
-                        users_data.append(
-                            {
-                                "user_id": user_id,
-                                "email": email,
-                                "first_name": first_name,
-                                "last_name": last_name,
-                            },
-                        )
-                    except Exception as exc:
-                        logger.warning(exc)
-                        continue
-                else:
-                    try:
-                        user_ids = events_admin_request.get_subscribers()
-                    except requests.exceptions.RequestException:
-                        continue
-                    try:
-                        for user_id in user_ids:
-                            email, first_name, last_name = auth_request.get_user_details(user_id=user_id)
-                            users_data.append(
-                                {
-                                    "user_id": user_id,
-                                    "email": email,
-                                    "first_name": first_name,
-                                    "last_name": last_name,
-                                },
-                            )
-                    except Exception as exc:
-                        logger.warning(exc)
-                        continue
-                template_id = message.template_id
-                if template_id:
-                    try:
-                        template = events_admin_request.get_template(template_id=template_id)
-                    except requests.exceptions.RequestException:
-                        template = events_admin_request.get_default_template()
-                else:
-                    template = events_admin_request.get_default_template()
-                jinja_template = jinja_env.from_string(template)
-                # есть ли в шаблоне поля, если есть, то сообщение персонифицировано, если нет, то нет
-                template_variables = jinja2.meta.find_undeclared_variables(jinja_env.parse(template))
-                to = []
-                # формируем не персонифицированное сообщение
-                if (len(template_variables) == 1) and ("text" in template_variables):
-                    try:
-                        body = jinja_template.render(text=text)
-                    except Exception as exc:
-                        logger.warning(exc)
-                        continue
-                    if _type == ChannelType.PUSH:
-                        for user_data in users_data:
-                            to.append(user_data.get("user_id"))
-                    else:
-                        for user_data in users_data:
-                            to.append(user_data.get("email"))
-                    match _type:
-                        case ChannelType.PUSH:
-                            notification_message = PushNotificationModel(
-                                notification_id=notification_id,
-                                subject=subject,
-                                to=to,
-                                body=body,
-                            )
-                        case ChannelType.EMAIL:
-                            notification_message = EmailNotificationModel(
-                                notification_id=notification_id,
-                                subject=subject,
-                                to=to,
-                                body=body,
-                            )
-                        case _:
-                            continue
+        auth_request = AuthRequest()
+        events_admin_request = EventsAdminRequest()
+
+        users_data = self.fetch_users_data(user_id, auth_request, events_admin_request)
+        template = self.retrieve_template(message.template_id, events_admin_request)
+        self.generate_notifications(
+            _type,
+            users_data,
+            text,
+            template,
+            notification_id,
+            subject,
+            notification_messages,
+            rmq_message,
+        )
+
+    @staticmethod
+    def determine_message_type(message_type: RmqQueue) -> ChannelType | None:
+        """Определение типа сообщения."""
+
+        match message_type:  # noqa
+            case RmqQueue.PUSH_REVIEW_LIKE.value | RmqQueue.PUSH_GENERAL_NOTICE.value:
+                return ChannelType.PUSH
+            case RmqQueue.EMAIL_WEEKLY_BOOKMARKS.value | RmqQueue.EMAIL_GENERAL_NOTICE.value:
+                return ChannelType.EMAIL
+            case _:
+                return None
+
+    @staticmethod
+    def extract_user_id(message: Any) -> Any | None:
+        """Получение ID пользователя."""
+        try:
+            return message.user_id
+        except Exception:  # noqa
+            return None
+
+    def fetch_users_data(
+        self,
+        user_id: Any | None,
+        auth_request: AuthRequest,
+        events_admin_request: EventsAdminRequest,
+    ) -> list[dict[str, Any]]:
+        """Формирование данных для отправки."""
+
+        if user_id:
+            return self.get_user_details(user_id, auth_request)
+        return self.get_subscriber_details(auth_request, events_admin_request)
+
+    @staticmethod
+    def get_user_details(user_id: Any, auth_request: AuthRequest) -> list[dict[str, Any]]:
+        """Получение информации по пользователю."""
+
+        try:
+            email, first_name, last_name = auth_request.get_user_details(user_id=user_id)
+            return [
+                {
+                    "user_id": user_id,
+                    "email": email,
+                    "first_name": first_name,
+                    "last_name": last_name,
+                },
+            ]
+        except Exception as exc:
+            logger.warning(exc)
+            return []
+
+    @staticmethod
+    def get_subscriber_details(
+        auth_request: AuthRequest,
+        events_admin_request: EventsAdminRequest,
+    ) -> list[dict[str, Any]]:
+        """Получения информации по подпискам."""
+
+        try:
+            user_ids = events_admin_request.get_subscribers()
+            return [
+                {
+                    "user_id": user_id,
+                    "email": email,
+                    "first_name": first_name,
+                    "last_name": last_name,
+                }
+                for user_id in user_ids
+                for email, first_name, last_name in [auth_request.get_user_details(user_id=user_id)]
+            ]
+        except requests.exceptions.RequestException as exc:
+            logger.warning(exc)
+            return []
+
+    @staticmethod
+    def retrieve_template(template_id: Any, events_admin_request: EventsAdminRequest) -> jinja2.Template:
+        """Применения шаблона к сообщению."""
+
+        try:
+            if template_id:
+                return events_admin_request.get_template(template_id=template_id)
+            return events_admin_request.get_default_template()
+        except requests.exceptions.RequestException:
+            return events_admin_request.get_default_template()
+
+    def generate_notifications(
+        self,
+        _type: ChannelType,
+        users_data: list[dict[str, Any]],
+        text: str,
+        template: Any,
+        notification_id: Any,
+        subject: Any,
+        notification_messages: list[dict[str, Any]],
+        rmq_message: dict[str, Any | ModelsSchemas],
+    ) -> None:
+        """Генерация сообщения из полученных данных."""
+
+        jinja_template = jinja_env.from_string(template)
+        # есть ли в шаблоне поля, если есть, то сообщение персонифицировано, если нет, то нет
+        template_variables = jinja2.meta.find_undeclared_variables(jinja_env.parse(template))
+
+        # формируем не персонифицированное сообщение
+        if "text" in template_variables and len(template_variables) == 1:
+            self.create_nonpersonalized_notifications(
+                _type,
+                users_data,
+                text,
+                jinja_template,
+                notification_id,
+                subject,
+                notification_messages,
+                rmq_message,
+            )
+        else:
+            # формируем персонифицированное сообщение
+            self.create_personalized_notifications(
+                _type,
+                users_data,
+                text,
+                jinja_template,
+                notification_id,
+                subject,
+                notification_messages,
+                rmq_message,
+            )
+
+    def create_nonpersonalized_notifications(
+        self,
+        _type: ChannelType,
+        users_data: list[dict[str, Any]],
+        text: str,
+        jinja_template: Any,
+        notification_id: Any,
+        subject: Any,
+        notification_messages: list[dict[str, Any]],
+        rmq_message: ModelsSchemas,
+    ) -> None:
+        """Формирование НЕ персонализированного сообщения."""
+
+        try:
+            body = jinja_template.render(text=text)
+        except Exception as exc:
+            logger.warning(exc)
+            return
+
+        to = [user_data.get("email" if _type == ChannelType.EMAIL else "user_id") for user_data in users_data]
+        notification_message = self.create_notification_model(_type, notification_id, subject, to, body)
+        if notification_message:
+            notification_messages.append(
+                {
+                    "type": _type,
+                    "delivery_tag": rmq_message.get("delivery_tag"),
+                    "headers": rmq_message.get("message").headers,
+                    "message": notification_message,
+                },
+            )
+
+    def create_personalized_notifications(
+        self,
+        _type: ChannelType,
+        users_data: list[dict[str, Any]],
+        text: str,
+        jinja_template: Any,
+        notification_id: Any,
+        subject: Any,
+        notification_messages: list[dict[str, Any]],
+        rmq_message: ModelsSchemas,
+    ) -> None:
+        """Формирование персонализированного сообщения."""
+
+        for user_data in users_data:
+            try:
+                body = jinja_template.render(
+                    first_name=user_data.get("first_name"),
+                    last_name=user_data.get("last_name"),
+                    text=text,
+                )
+                to = [user_data.get("email" if _type == ChannelType.EMAIL else "user_id")]
+                notification_message = self.create_notification_model(_type, notification_id, subject, to, body)
+                if notification_message:
                     notification_messages.append(
                         {
                             "type": _type,
                             "delivery_tag": rmq_message.get("delivery_tag"),
-                            "headers": message.get("message").headers,
+                            "headers": rmq_message.get("message").headers,
                             "message": notification_message,
                         },
                     )
-                # формируем персонифицированные сообщения
-                else:
-                    try:
-                        for user_data in users_data:
-                            body = jinja_template.render(
-                                first_name=user_data.get("first_name"),
-                                last_name=user_data.get("last_name"),
-                                text=text,
-                            )
-                            match _type:
-                                case ChannelType.PUSH:
-                                    notification_message = PushNotificationModel(
-                                        notification_id=notification_id,
-                                        subject=subject,
-                                        to=[user_data.get("user_id")],
-                                        body=body,
-                                    )
-                                case ChannelType.EMAIL:
-                                    notification_message = EmailNotificationModel(
-                                        notification_id=notification_id,
-                                        subject=subject,
-                                        to=[user_data.get("email")],
-                                        body=body,
-                                    )
-                                case _:
-                                    raise Exception("Ошибка создания сообщения")
-                            notification_messages.append(
-                                {
-                                    "type": _type,
-                                    "delivery_tag": rmq_message.get("delivery_tag"),
-                                    "headers": rmq_message.get("message").headers,
-                                    "message": notification_message,
-                                },
-                            )
-                    except Exception as exc:
-                        logger.warning(exc)
-                        continue
-            logger.info(
-                f"{len(rmq_messages)} messages was transformed to {len(notification_messages)} and "
-                + "was send to load to notification service...",
-            )
-            next_node.send(notification_messages)
+            except Exception as exc:
+                logger.warning(exc)
+                continue
+
+    @staticmethod
+    def create_notification_model(
+        _type: ChannelType,
+        notification_id: Any,
+        subject: Any,
+        to: list,
+        body: Any,
+    ) -> ModelsSchemas | None:
+        """Инициализация нужной модели сообшения для отправки."""
+
+        match _type:  # noqa
+            case ChannelType.PUSH:
+                return PushNotificationModel(notification_id=notification_id, subject=subject, to=to, body=body)
+            case ChannelType.EMAIL:
+                return EmailNotificationModel(notification_id=notification_id, subject=subject, to=to, body=body)
+            case _:
+                return None
