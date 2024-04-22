@@ -39,7 +39,7 @@ async def activate_user_subscription(
 @router.post(
     '/{user_subscription_id}/cancel',
     status_code=HTTPStatus.OK,
-    summary='Приостановка подписки',
+    summary='Деактивация подписки',
     responses={
         HTTPStatus.BAD_REQUEST: {'model': HttpExceptionModel},
         HTTPStatus.UNAUTHORIZED: {'model': HttpExceptionModel},

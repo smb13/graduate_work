@@ -1,19 +1,16 @@
 from datetime import date
-from functools import lru_cache, wraps
+from functools import lru_cache
 from http import HTTPStatus
 from typing import Optional
-from uuid import UUID
 
-from async_fastapi_jwt_auth import AuthJWT
 from fastapi import Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
-from psycopg.errors import UniqueViolation, ForeignKeyViolation
-from sqlalchemy import delete, select, update, and_
+from psycopg.errors import UniqueViolation
+from sqlalchemy import select, update, and_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.postgres import get_session
-
 from models.subscription import SubscriptionType
 from schemas.subscription_type import SubscriptionTypeResponse, SubscriptionTypeBase
 

@@ -13,11 +13,9 @@ class BillingService:
 
     @backoff.on_exception(backoff.expo,
                           ClientError,
-                          max_tries=1)
+                          max_tries=billing_settings.backoff_max_tries)
     async def call_to_billing(self, uri: str, **kwargs) -> Coroutine[Any, Any, str] | Exception:
         url = billing_settings.get_address() + uri
-        return {"confirmation_url":
-                    "https://yoomoney.ru/api-pages/v2/payment-confirm/epl?orderId=2419a771-000f-5000-9000-1edaf29243f2"}
         async with aiohttp.ClientSession() as session:
             async with session.post(url, data=kwargs) as response:
                 if response.status in (HTTPStatus.OK, HTTPStatus.CREATED):

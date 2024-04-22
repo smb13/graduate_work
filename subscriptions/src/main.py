@@ -2,6 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 
 import uvicorn
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from async_fastapi_jwt_auth import AuthJWT
 from async_fastapi_jwt_auth.exceptions import AuthJWTException
 from fastapi import FastAPI
@@ -11,10 +12,10 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from api.v1 import subscription_types, me_user_subscriptions, user_subscriptions, user_subscription_types
-
 from core.config import project_settings, postgres_settings
 from core.logger import LOGGING
 from db import postgres
+from jobs.subscriptions_renewal import subscriptions_renewal_job
 
 
 @asynccontextmanager
@@ -29,7 +30,18 @@ async def lifespan(_: FastAPI):
     if project_settings.debug:
         await postgres.create_database()
 
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(
+        subscriptions_renewal_job,
+        "cron",
+        hour=18,
+        minute=35
+    )
+    scheduler.start()
+
     yield
+
+    scheduler.shutdown()
 
 
 @AuthJWT.load_config
@@ -49,7 +61,7 @@ app = FastAPI(
     # Указываем функцию, обработки жизненного цикла приложения.
     lifespan=lifespan,
     # Описание сервиса
-    description="API для сайта, личного кабинета и управления доступами",
+    description="API управления подписками",
 )
 
 # Подключаем роутер к серверу с указанием префикса для API (/v1/films).

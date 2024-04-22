@@ -47,6 +47,7 @@ class BillingSettings(BaseSettings):
     new_uri: str = Field('/api/v1/payments/new')
     renew_uri: str = Field('/api/v1/payments/renew')
     refund_uri: str = Field('/api/v1/payments/refund')
+    backoff_max_tries: int = Field(30)
 
     def get_address(self):
         return f'http://{self.host}:{self.port}'
