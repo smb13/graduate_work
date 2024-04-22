@@ -23,7 +23,7 @@ async def process_recurring_payments() -> None:
     yookassa: YooKassa = await get_yookassa()
     client: AsyncClient = await get_client()
 
-    async with get_session() as session:
+    async for session in get_session():
         cast("AsyncSession", session)
         transaction_service: TransactionService = get_transaction_service(alchemy=session, redis=redis)
         payment_service: YooKassaPaymentService = get_yookassa_payment_service(payment_client=yookassa)
