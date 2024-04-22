@@ -24,6 +24,13 @@
 * [subscription_cancel.md](architecture%2Fsequence_diagrams%2Fsubscription_cancel.md)
 * [others.md](architecture%2Fsequence_diagrams%2Fothers.md)
 
+## Разработчикам (ВАЖНО!!!)
+
+Перед началом работы над проектом выполните команду для установки пре-коммит хуков
+```bash
+pre-commit install
+```
+
 ## Подготовка к запуску
 
 Все сервисы добавлены в один docker-compose файл docker-compose-dev.yml

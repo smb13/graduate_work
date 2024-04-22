@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     jaeger_agent_port: int = 6831
     payment_return_url: str = "http://localhost:8000/payment/return"
 
+    subscription_service_host: str = "http://subscription"
+    subscription_service_port: str = "8000"
+
 
 # Корень проекта
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
