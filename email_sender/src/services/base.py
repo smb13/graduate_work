@@ -21,9 +21,8 @@ class AbstractService(metaclass=abc.ABCMeta):
         pass
 
     @staticmethod
-    @abc.abstractmethod
     def check_to_resend(notice: EmailNotification) -> EmailNotification | None:
-        if notice.retries == settings.email.max_retries_to_send:
+        if notice.retries >= settings.email.max_retries_to_send:
             logger.debug("Закончилось кол-во попыток для отправки email")
             # TODO - можно добавить отправку в очередь, для повторной отправки через какое-то время
             return None
@@ -33,7 +32,6 @@ class AbstractService(metaclass=abc.ABCMeta):
 
     @classmethod
     @lru_cache
-    @abc.abstractmethod
     def get_service(cls, jwt: AuthJWT = Depends()) -> Self:
         """
         Метод-инициализатор для Dependency Injections.
