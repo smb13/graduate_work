@@ -31,6 +31,8 @@ class User(AbstractBaseUser):
     is_admin: bool = models.BooleanField(default=False)
     first_name: str = models.CharField(max_length=255)
     last_name: str = models.CharField(max_length=255)
+    access_token: str = models.CharField(max_length=1024, default=None, null=True)
+    refresh_token: str = models.CharField(max_length=1024, default=None, null=True)
 
     objects = MyUserManager()
 

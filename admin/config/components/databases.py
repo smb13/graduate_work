@@ -9,7 +9,7 @@ DATABASES = {
         "NAME": env("POSTGRES_MOVIES_DB", default="movies_db"),
         "USER": env("POSTGRES_USER", default=""),
         "PASSWORD": env("POSTGRES_PASSWORD", default=""),
-        "HOST": "postgres",
+        "HOST": env("POSTGRES_HOST", default="postgres"),
         "PORT": env("POSTGRES_PORT", default=5432),
         "OPTIONS": {
             # Нужно явно указать схемы, с которыми будет работать приложение.

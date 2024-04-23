@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     auth_service_host: str = "auth"
     auth_service_port: str = "8000"
 
-    subscription_service_host: str = "subscription"
+    subscription_service_host: str = "subscriptions"
     subscription_service_port: str = "8000"
 
     local_user_email: str = ""
