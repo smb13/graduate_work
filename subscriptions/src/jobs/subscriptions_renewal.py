@@ -28,14 +28,14 @@ async def subscriptions_renewal() -> None:
             and_(
                 UserSubscription.end_of_subscription >= today,
                 UserSubscription.end_of_subscription <= today_plus_3,
-                UserSubscription.end_of_subscription == SubscriptionStatus.ACTIVE,
+                UserSubscription.status == SubscriptionStatus.ACTIVE,
             ),
         )
         subscriptions = await db.scalars(subscriptions_to_renew_query)
         billing_service: BillingService = get_billing_service()
         for subscription in subscriptions.yield_per(100):
             try:
-                await billing_service.call_to_billing(
+                await billing_service.payments_renew(
                     uri=billing_settings.renew_uri,
                     payment_method_id=subscription.payment_method_id,
                     amount=annual_prices.get(subscription.type_id),

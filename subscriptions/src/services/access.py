@@ -8,7 +8,7 @@ from jose import jwt
 from fastapi import HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from core.config import project_settings
+from core.config import settings
 
 
 class Roles(str, Enum):
@@ -35,7 +35,7 @@ def check_access(allow_roles: set):
 
 def decode_token(token: str) -> dict | None:
     try:
-        decoded_token = jwt.decode(token, project_settings.authjwt_secret_key)
+        decoded_token = jwt.decode(token, settings.authjwt_secret_key)
         return decoded_token if decoded_token['exp'] >= time.time() else None
     except Exception:
         return None

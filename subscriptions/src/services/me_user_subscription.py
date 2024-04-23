@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import billing_settings
 from db.postgres import get_session
 from models.subscription import UserSubscription, SubscriptionType, SubscriptionStatus
+from schemas.user_subscription import UrlResponse
 from services.billing import BillingService, get_billing_service
 
 
@@ -142,8 +143,7 @@ class MeUserSubscriptionService:
         if refund_amount == 0:
             raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail='Refund amount equal to zero')
 
-        response = await self.billing_service.call_to_billing(
-            uri=billing_settings.refund_uri,
+        response = await self.billing_service.payments_cancel(
             payment_method_id=str(active_user_subscription.payment_method_id),
             subscription_id=str(active_user_subscription.id),
             amount=refund_amount,

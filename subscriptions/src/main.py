@@ -1,23 +1,25 @@
 import logging
 import typing
 from contextlib import asynccontextmanager
+from http import HTTPStatus
 
 import uvicorn
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from async_fastapi_jwt_auth import AuthJWT
-from async_fastapi_jwt_auth.exceptions import AuthJWTException
-from fastapi import FastAPI
+from authlib.integrations import httpx_client
+from fastapi import FastAPI, Response
 from fastapi.responses import ORJSONResponse
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from pydantic_settings import BaseSettings
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from starlette.requests import Request
-from starlette.responses import JSONResponse
 
 from api.v1 import me_user_subscriptions, subscription_types, user_subscription_types, user_subscriptions
-from core.config import postgres_settings, project_settings
+from core.config import postgres_settings, settings, billing_settings
 from core.logger import LOGGING
-from db import postgres
+from core.tracer import configure_tracer
+from db import postgres, http
 
 
 @asynccontextmanager
@@ -35,8 +37,13 @@ async def lifespan(_: FastAPI) -> typing.AsyncGenerator:
         expire_on_commit=False,
     )
 
-    if project_settings.debug:
+    if settings.debug:
         await postgres.create_database()
+
+    http.client = httpx_client.AsyncOAuth2Client(
+        base_url=billing_settings.service_base_url,
+        token_endpoint_auth_method="client_secret_post",
+    )
 
     scheduler = AsyncIOScheduler()
     scheduler.add_job(
@@ -47,17 +54,19 @@ async def lifespan(_: FastAPI) -> typing.AsyncGenerator:
 
     yield
 
+    await http.client.aclose()
+
     scheduler.shutdown()
 
 
 @AuthJWT.load_config
 def get_config() -> "BaseSettings":
-    return project_settings
+    return settings
 
 
 app = FastAPI(
     # Название проекта, используемое в документации.
-    title=project_settings.name,
+    title=settings.subscriptions_project_name,
     # Адрес документации (swagger).
     docs_url="/api/openapi",
     # Адрес документации (openapi).
@@ -77,9 +86,16 @@ app.include_router(me_user_subscriptions.router, prefix="/api/v1")
 app.include_router(user_subscriptions.router, prefix="/api/v1")
 
 
-@app.exception_handler(AuthJWTException)
-def authjwt_exception_handler(_: Request, exc: AuthJWTException) -> JSONResponse:
-    return JSONResponse(status_code=exc.status_code, content={"detail": exc.message})
+if settings.enable_tracer:
+    configure_tracer()
+    FastAPIInstrumentor.instrument_app(app)
+
+
+@app.middleware("http")
+async def before_request(request: Request, call_next: typing.Callable) -> Response:
+    if not settings.debug and not request.headers.get("X-Request-Id"):
+        return ORJSONResponse(status_code=HTTPStatus.BAD_REQUEST, content={"detail": "X-Request-Id header is required"})
+    return await call_next(request)
 
 
 if __name__ == "__main__":

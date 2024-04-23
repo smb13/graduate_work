@@ -1,30 +1,78 @@
 from functools import lru_cache
-from http import HTTPStatus
-from fastapi import HTTPException
-from typing import Any, Coroutine
+from typing import TYPE_CHECKING
+from urllib.parse import urljoin
 
-import aiohttp
 import backoff
-from aiohttp.client_exceptions import ClientError
-from core.config import billing_settings
+import httpx
+from authlib.integrations.base_client import OAuthError
+from fastapi import Depends
+
+from core.config import billing_settings, auth_settings, settings
+from db.http import get_client
+
+if TYPE_CHECKING:
+    from authlib.integrations import httpx_client
 
 
 class BillingService:
+    def __init__(
+            self,
+            client: "httpx_client.AsyncOAuth2Client",
+    ) -> None:
+        self.client = client
 
-    @backoff.on_exception(backoff.expo,
-                          ClientError,
-                          max_tries=billing_settings.backoff_max_tries)
-    async def call_to_billing(self, uri: str, **kwargs) -> Coroutine[Any, Any, str] | Exception:
-        url = billing_settings.get_address() + uri
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, data=kwargs) as response:
-                if response.status in (HTTPStatus.OK, HTTPStatus.CREATED):
-                    return response.text()
-                else:
-                    raise HTTPException(status_code=response.status, detail=response.text())
+    _auth_path = "/api/v1/auth/token"
+
+    @property
+    def _auth_url(self) -> str:
+        return urljoin(auth_settings.service_base_url, self._auth_path)
+
+    async def _authenticate(self) -> None:
+        await self.client.fetch_token(
+            url=self._auth_url,
+            username=settings.local_user_email,
+            password=settings.local_user_password,
+        )
+
+    @backoff.on_exception(
+        backoff.expo,
+        exception=(httpx.HTTPStatusError, OAuthError),
+        max_tries=billing_settings.backoff_max_tries,
+    )
+    async def _send_request(self, method: str, url: str, **kwargs) -> "httpx.Response":
+        try:
+            response = await self.client.request(method=method, url=url, **kwargs)
+        except OAuthError:
+            await self._authenticate()
+            response = await self.client.request(method=method, url=url, **kwargs)
+        response.raise_for_status()
+        return response
+
+    async def payments_new(self, **kwargs) -> str:
+        response = await self._send_request(
+            method="POST",
+            url=urljoin(billing_settings.service_base_url, billing_settings.new_uri),
+            data=kwargs)
+        return response.text
+
+    async def payments_cancel(self, **kwargs) -> str:
+        response = await self._send_request(
+            method="POST",
+            url=urljoin(billing_settings.service_base_url, billing_settings.refund_uri),
+            data=kwargs)
+        return response.text
+
+    async def payments_renew(self, uri, **kwargs):
+        response = await self._send_request(
+            method="POST",
+            url=urljoin(billing_settings.service_base_url, billing_settings.renew_uri),
+            data=kwargs)
+        return response.text
 
 
-@lru_cache()
+@lru_cache(
+)
 def get_billing_service(
+    client: "httpx.AsyncClient" = Depends(get_client),
 ) -> BillingService:
-    return BillingService()
+    return BillingService(client=client)
