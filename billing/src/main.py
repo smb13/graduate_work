@@ -3,8 +3,8 @@ from contextlib import asynccontextmanager
 from http import HTTPStatus
 
 import uvicorn
-from aioyookassa import YooKassa
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 from authlib.integrations import httpx_client
 from clients import alchemy, redis, subscription
 from clients.yookassa import client as yookassa
@@ -24,7 +24,8 @@ description = """Проведение платежей и автоплатеже
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
-    from jobs.process_payments import process_recurring_payments_job
+    from jobs.check_pending_payments import check_pending
+    from jobs.process_recurring_payments import process_recurring
 
     redis.redis = Redis(
         host=settings.redis_host,
@@ -37,7 +38,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         password=settings.postgres_password,
         host=settings.postgres_host,
         port=settings.postgres_port,
-        db_name=settings.postgres_auth_db,
+        db_name=settings.postgres_billing_db,
     )
     alchemy.engine = create_async_engine(dsn, echo=True, future=True)
     alchemy.AsyncSessionLocal = async_sessionmaker(
@@ -45,7 +46,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         expire_on_commit=False,
     )
 
-    yookassa.yookassa = YooKassa(
+    yookassa.yookassa = yookassa.YooKassa(
         api_key=settings.yookassa_secret_key,
         shop_id=settings.yookassa_account_id,
     )
@@ -58,10 +59,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     scheduler = AsyncIOScheduler()
     scheduler.start()
     scheduler.add_job(
-        process_recurring_payments_job,
-        "cron",
-        hour=15,
-        minute=0,
+        process_recurring,
+        CronTrigger.from_crontab("* * * * *"),
+    )
+    scheduler.add_job(
+        check_pending,
+        CronTrigger.from_crontab("* * * * *"),
     )
 
     # Импорт моделей необходим для их автоматического создания
