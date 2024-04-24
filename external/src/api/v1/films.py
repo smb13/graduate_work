@@ -51,6 +51,7 @@ async def films_search(
             uuid=film.id,
             title=film.title,
             imdb_rating=film.imdb_rating,
+            subscriptions=film.subscriptions
         )
         for film in films
     ]
@@ -84,6 +85,7 @@ async def film_details(
         actors=[FilmPersonExternal(uuid=person.id, full_name=person.name) for person in film.actors or []],
         directors=[FilmPersonExternal(uuid=person.id, full_name=person.name) for person in film.directors or []],
         writers=[FilmPersonExternal(uuid=person.id, full_name=person.name) for person in film.writers or []],
+        subscriptions=film.subscriptions or [],
     )
 
 
@@ -122,6 +124,7 @@ async def films_list(
             uuid=film.id,
             title=film.title,
             imdb_rating=film.imdb_rating,
+            subscriptions=film.subscriptions
         )
         for film in films
     ]

@@ -45,6 +45,16 @@ WHERE pfw.film_work_id::text = ANY(%s)
 GROUP BY pfw.film_work_id;
 """
 
+SQL_SUBSCRIPTIONS = """
+SELECT sfw.film_work_id,
+       json_agg(
+           DISTINCT sfw.subscription_id
+       )
+FROM content.subscription_film_work as sfw
+WHERE sfw.film_work_id::text = ANY(%s)
+GROUP BY sfw.film_work_id;
+"""
+
 
 class MoviesETL(PostgresToElasticsearch):
     index_name: str = "movies"
@@ -52,6 +62,7 @@ class MoviesETL(PostgresToElasticsearch):
     enrich_queries: dict[str, str] = {
         "genres": SQL_GENRES,
         "persons": SQL_PERSONS,
+        "subscriptions": SQL_SUBSCRIPTIONS
     }
 
     @staticmethod
@@ -68,6 +79,7 @@ class MoviesETL(PostgresToElasticsearch):
             "directors": [],
             "actors": [],
             "writers": [],
+            "subscriptions": item["subscriptions"]
         }
         for person in item["persons"]:
             transformed_item[person["role"] + "s_names"].append(person["name"])

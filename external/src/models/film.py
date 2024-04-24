@@ -23,5 +23,6 @@ class Film(BaseModel):
     directors_names: list[str] | None = None
     actors_names: list[str] | None = None
     writers_names: list[str] | None = None
+    subscriptions: list[int] | None = None
 
     model_config = ConfigDict(populate_by_name=True)

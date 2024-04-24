@@ -26,9 +26,12 @@ class Settings(BaseSettings):
     postgres_password: str
     postgres_movies_db: str = "movies_database"
     postgres_port: int = 5432
+    postgres_host: str = "postgres"
 
     elastic_port: int = 9200
+    elastic_host: str = "elastic"
 
+    redis_host: str = "redis"
     redis_port: int = 6379
     redis_db: int = Field(alias="REDIS_DB_ETL", default=2)
 

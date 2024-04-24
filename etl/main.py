@@ -14,17 +14,17 @@ if __name__ == "__main__":
         "dbname": settings.postgres_movies_db,
         "user": settings.postgres_user,
         "password": settings.postgres_password,
-        "host": "postgres",
+        "host": settings.postgres_host,
         "port": settings.postgres_port,
         "options": "-c search_path=content,public",
     }
     redis_dsn = {
-        "host": "redis",
+        "host": settings.redis_host,
         "port": settings.redis_port,
         "db": settings.redis_db,
     }
     elastic_host = {
-        "host": "elastic",
+        "host": settings.elastic_host,
         "port": settings.elastic_port,
         "scheme": "http",
     }
