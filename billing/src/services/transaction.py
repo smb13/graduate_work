@@ -8,7 +8,7 @@ from fastapi import Depends
 from fastapi_pagination.cursor import CursorPage
 from fastapi_pagination.ext.sqlalchemy import paginate
 from redis.asyncio import Redis
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.enums import CurrencyEnum, TransactionKindEnum, TransactionProcessStateEnum
@@ -81,12 +81,20 @@ class TransactionService(BaseDBService):
         self,
         transaction_id: uuid.UUID,
         process_state: TransactionProcessStateEnum,
+        external_id: uuid.UUID | None = None,
+        payment_method_id: uuid.UUID | None = None,
     ) -> Transaction | None:
         transaction: Transaction | None = await self.session.get(Transaction, transaction_id)
         if transaction is None:
             return None
 
         transaction.process_state = process_state
+
+        if external_id:
+            transaction.external_id = external_id
+
+        if payment_method_id:
+            transaction.payment_method_id = payment_method_id
 
         await self.session.commit()
         await self.session.refresh(transaction)
@@ -133,8 +141,11 @@ class TransactionService(BaseDBService):
         description: str,
         amount: Decimal,
         currency: CurrencyEnum,
+        external_id: uuid.UUID,
+        payment_created_at: dt.datetime,
         payment_method_id: uuid.UUID,
         payment_to_refund_id: uuid.UUID,
+        process_state: TransactionProcessStateEnum,
     ) -> Transaction:
         """Creates a new refund transaction."""
 
@@ -144,10 +155,12 @@ class TransactionService(BaseDBService):
             description=description,
             amount=amount,
             currency=currency,
+            external_id=external_id,
             kind=TransactionKindEnum.refund,
-            process_state=TransactionProcessStateEnum.succeeded,
+            process_state=process_state,
             payment_method_id=payment_method_id,
             refund_payment_id=payment_to_refund_id,
+            created_at=payment_created_at,
         )
 
         self.session.add(transaction)
@@ -207,9 +220,19 @@ class TransactionService(BaseDBService):
                 query = query.where(Transaction.cnt_attempts <= cnt_attempts_range[1])
         if last_attempt_at_date_range:
             if last_attempt_at_date_range[0] is not None:
-                query = query.where(func.date(Transaction.last_attempt_at) >= last_attempt_at_date_range[0])
+                query = query.where(
+                    or_(
+                        Transaction.last_attempt_at.is_(None),
+                        func.date(Transaction.last_attempt_at) >= last_attempt_at_date_range[0],
+                    ),
+                )
             if last_attempt_at_date_range[1] is not None:
-                query = query.where(func.date(Transaction.last_attempt_at) <= last_attempt_at_date_range[1])
+                query = query.where(
+                    or_(
+                        Transaction.last_attempt_at.is_(None),
+                        func.date(Transaction.last_attempt_at) <= last_attempt_at_date_range[1],
+                    ),
+                )
 
         return query  # noqa: R504
 

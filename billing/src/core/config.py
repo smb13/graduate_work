@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     postgres_port: int = 5432
     postgres_user: str
     postgres_password: str
-    postgres_auth_db: str
+    postgres_billing_db: str = "billing_database"
 
     page_size: int = 10
     page_size_max: int = 100
@@ -51,6 +51,8 @@ class Settings(BaseSettings):
 
     local_user_email: str = ""
     local_user_password: str = ""
+
+    payment_attempts_limit: int = 3
 
     @property
     def subscription_service_base_url(self) -> str:

@@ -51,7 +51,7 @@ class Refund(BaseModel):
     id: str
     payment_id: str
     status: PaymentStatus
-    cancellation_details: CancellationDetails
+    cancellation_details: CancellationDetails | None = None
     created_at: dt.datetime
     amount: PaymentAmount
     description: str | None = None

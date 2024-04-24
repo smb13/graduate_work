@@ -10,3 +10,7 @@ class BaseDBService:
     ) -> None:
         self.session = session
         self.redis = redis
+
+
+class ServiceError(Exception):
+    pass

@@ -10,6 +10,7 @@ class TransactionProcessStateEnum(str, Enum):
     new = "new"  # initial state, payment is created
     pending = "pending"  # payment is created and waiting for confirmation
     succeeded = "succeeded"  # payment is confirmed
+    applied = "applied"  # payment is applied to subscription
     failed = "failed"  # payment is failed
 
 

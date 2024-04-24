@@ -89,25 +89,30 @@ db_dump: # Сделать дамп базы данных Postgres в файл ./
 	docker compose $(DOCKER_COMPOSE_DEV) exec -i postgres bash -c "pg_dump -U $(POSTGRES_USER) "\
 	"-Fc -f /etc/db_dump/movies_db.backup $(POSTGRES_MOVIES_DB)"
 
-db_create: db_create_movies db_create_auth db_create_scheduler # Создать базы данных для сервисов
+db_create: db_create_movies db_create_auth db_create_billing db_create_scheduler # Создать базы данных для сервисов
 
 db_create_movies: # Создать базу данных для сервиса movies
-	docker compose $(DOCKER_COMPOSE_PROD) exec -i postgres bash -c "/etc/db_dump/wait-for-postgres.sh localhost && "\
+	docker compose $(DOCKER_COMPOSE_DEV) exec -i postgres bash -c "/etc/db_dump/wait-for-postgres.sh localhost && "\
 	"echo \"SELECT 'CREATE DATABASE $(POSTGRES_MOVIES_DB)' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = "\
 	"'$(POSTGRES_MOVIES_DB)')\gexec\" | psql -U $(POSTGRES_USER)"
 
 db_create_auth: # Создать базу данных для сервиса auth
-	docker compose $(DOCKER_COMPOSE_PROD) exec -i postgres bash -c "/etc/db_dump/wait-for-postgres.sh localhost && "\
+	docker compose $(DOCKER_COMPOSE_DEV) exec -i postgres bash -c "/etc/db_dump/wait-for-postgres.sh localhost && "\
 	"echo \"SELECT 'CREATE DATABASE $(POSTGRES_AUTH_DB)' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = "\
 	"'$(POSTGRES_AUTH_DB)')\gexec\" | psql -U $(POSTGRES_USER)"
 
+db_create_billing: # Создать базу данных для сервиса billing
+	docker compose $(DOCKER_COMPOSE_DEV) exec -i postgres bash -c "/etc/db_dump/wait-for-postgres.sh localhost && "\
+	"echo \"SELECT 'CREATE DATABASE $(POSTGRES_BILLING_DB)' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = "\
+	"'$(POSTGRES_BILLING_DB)')\gexec\" | psql -U $(POSTGRES_USER)"
+
 db_create_scheduler: # Создать базу данных для сервиса scheduler
-	docker compose $(DOCKER_COMPOSE_PROD) exec -i postgres bash -c "/etc/db_dump/wait-for-postgres.sh localhost && "\
+	docker compose $(DOCKER_COMPOSE_DEV) exec -i postgres bash -c "/etc/db_dump/wait-for-postgres.sh localhost && "\
 	"echo \"SELECT 'CREATE DATABASE $(POSTGRES_SCHEDULER_DB)' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = "\
 	"'$(POSTGRES_SCHEDULER_DB)')\gexec\" | psql -U $(POSTGRES_USER)"
 
 db_drop_auth: # Удалить базу данных для сервиса auth
-	docker compose $(DOCKER_COMPOSE_PROD) exec -i postgres bash -c "/etc/db_dump/wait-for-postgres.sh localhost && "\
+	docker compose $(DOCKER_COMPOSE_DEV) exec -i postgres bash -c "/etc/db_dump/wait-for-postgres.sh localhost && "\
 	"echo \"SELECT 'DROP DATABASE $(POSTGRES_AUTH_DB)' WHERE EXISTS (SELECT FROM pg_database WHERE datname = "\
 	"'$(POSTGRES_AUTH_DB)')\gexec\" | psql -U $(POSTGRES_USER)"
 

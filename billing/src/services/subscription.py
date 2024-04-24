@@ -6,8 +6,10 @@ import httpx
 from authlib.integrations.base_client import OAuthError
 from clients.subscription import get_client
 from fastapi import Depends
+from httpx import Response
 
 from core.config import settings
+from services.base import ServiceError
 
 if TYPE_CHECKING:
     from authlib.integrations import httpx_client
@@ -43,7 +45,7 @@ class SubscriptionService:
     )
     async def _send_request(self, method: str, url: str, **kwargs) -> "httpx.Response":
         try:
-            response = await self.client.request(method=method, url=url, **kwargs)
+            response: Response = await self.client.request(method=method, url=url, **kwargs)
         except OAuthError:
             await self._authenticate()
             response = await self.client.request(method=method, url=url, **kwargs)
@@ -51,10 +53,16 @@ class SubscriptionService:
         return response
 
     async def activate_subscription(self, subscription_id: str) -> None:
-        await self._send_request("PATCH", f"/subscriptions/{subscription_id}/activate")
+        try:
+            await self._send_request("PATCH", f"/subscriptions/{subscription_id}/activate")
+        except (httpx.HTTPStatusError, OAuthError, RuntimeError, httpx.ConnectError) as exc:
+            raise ServiceError(f"Subscription activation failed: {exc}") from exc
 
     async def cancel_subscription(self, subscription_id: str) -> None:
-        await self._send_request("PATCH", f"/subscriptions/{subscription_id}/cancel")
+        try:
+            await self._send_request("PATCH", f"/subscriptions/{subscription_id}/cancel")
+        except (httpx.HTTPStatusError, OAuthError, RuntimeError, httpx.ConnectError) as exc:
+            raise ServiceError(f"Subscription cancellation failed: {exc}") from exc
 
 
 def get_subscription_service(
