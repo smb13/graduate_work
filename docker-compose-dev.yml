@@ -93,6 +93,8 @@ services        :
     environment:
       DEBUG: true
       SERVICE_AUTH_API_BASE_PATH: http://auth_dev:8000/api/v1
+      SUBSCRIPTION_SERVICE_HOST: subscriptions_dev
+      SUBSCRIPTION_SERVICE_PORT: 8000
     ports:
     -   8080:8000    # Торчит наружу только при запущенном dev-сервере, на проде торчать не будет
     volumes:
