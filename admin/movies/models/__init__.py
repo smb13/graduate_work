@@ -1,7 +1,7 @@
 from movies.models.filmwork import FilmWork
 from movies.models.genre import Genre, GenreFilmWork
 from movies.models.person import Person, PersonFilmWork
-import movies.models.subscriptions
+from movies.models.subscriptions import Subscription, SubscriptionFilmWork
 
 __all__ = [
     "FilmWork",
@@ -9,4 +9,6 @@ __all__ = [
     "GenreFilmWork",
     "Person",
     "PersonFilmWork",
+    "Subscription",
+    "SubscriptionFilmWork",
 ]
