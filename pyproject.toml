@@ -73,6 +73,7 @@ exclude = [
     "tests",
     "test",
     "migrations",
+    "test_*"
 ]
 
 [[tool.mypy.overrides]]
@@ -86,6 +87,7 @@ django_settings_module = "wfm.settings"
 
 
 [tool.autoflake]
+exclude = ["test_*"]
 
 [tool.vulture]
 exclude = ["tests"]

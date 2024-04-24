@@ -2,7 +2,7 @@ from http import HTTPStatus
 
 from fastapi import APIRouter, Depends
 from src.schemas import base as base_schemas
-from src.schemas.email import EmailNotification
+from src.schemas.email import EmailNotification, ResponseEmailNotification
 from src.services.senders import SendgridService
 
 router = APIRouter()
@@ -31,5 +31,5 @@ async def liveness() -> base_schemas.ResponseBase:
 async def post_status(
     json_params: EmailNotification,
     email_service: SendgridService = Depends(SendgridService.get_service),
-) -> base_schemas.ResponseBase:
+) -> base_schemas.ResponseBase | ResponseEmailNotification:
     return await email_service.send(json_params)

@@ -18,3 +18,9 @@ class EmailNotification(BaseModel):
         examples=[["test@test.com", "vasya@test.com"], "test@test.com"],
     )
     message_body: str = Field(..., description="Текст уведомления")
+
+
+class ResponseEmailNotification(EmailNotification):
+    """Ответная схема при неудачной попытке отправки."""
+
+    detail: str
