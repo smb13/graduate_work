@@ -48,8 +48,8 @@ class PostgresSettings(BaseSettings):
 
 # Класс настройки сервиса Billing
 class BillingSettings(BaseSettings):
-    service_host: str = Field("billing")
-    service_port: str = Field("8000")
+    host: str = Field("billing")
+    port: str = Field("8000")
     new_uri: str = Field("/api/v1/payments/new")
     renew_uri: str = Field("/api/v1/payments/renew")
     refund_uri: str = Field("/api/v1/payments/refund")
@@ -58,22 +58,22 @@ class BillingSettings(BaseSettings):
     @property
     def service_base_url(self) -> str:
         return get_base_url(
-            billing_settings.service_host,
-            billing_settings.service_port,
+            billing_settings.host,
+            billing_settings.port,
         )
 
     model_config = SettingsConfigDict(env_prefix="billing_", env_file=".env", extra="ignore")
 
 
 class AuthSettings(BaseSettings):
-    service_host: str = "auth"
-    service_port: str = "8000"
+    host: str = "auth"
+    port: str = "8000"
 
     @property
     def service_base_url(self) -> str:
         return get_base_url(
-            auth_settings.service_host,
-            auth_settings.service_port,
+            auth_settings.host,
+            auth_settings.port,
         )
 
     model_config = SettingsConfigDict(env_prefix="auth_", env_file=".env", extra="ignore")

@@ -4,11 +4,12 @@ from typing import cast
 
 from aiohttp.client_exceptions import ClientError
 from fastapi import HTTPException
+from httpx import AsyncClient
 from sqlalchemy import and_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.config import billing_settings
+from db.http import get_client
 from db.postgres import get_session
 from main import lifespan
 from models import UserSubscription
@@ -18,6 +19,8 @@ from services.billing import BillingService, get_billing_service
 
 @lifespan(None)
 async def subscriptions_renewal() -> None:
+    client: AsyncClient = await get_client()
+
     async for db in get_session():
         cast("AsyncSession", db)
         today = date.today()
@@ -32,11 +35,10 @@ async def subscriptions_renewal() -> None:
             ),
         )
         subscriptions = await db.scalars(subscriptions_to_renew_query)
-        billing_service: BillingService = get_billing_service()
+        billing_service: BillingService = get_billing_service(client=client)
         for subscription in subscriptions.yield_per(100):
             try:
                 await billing_service.payments_renew(
-                    uri=billing_settings.renew_uri,
                     payment_method_id=subscription.payment_method_id,
                     amount=annual_prices.get(subscription.type_id),
                 )

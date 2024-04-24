@@ -7,7 +7,7 @@ import httpx
 from authlib.integrations.base_client import OAuthError
 from fastapi import Depends
 
-from core.config import billing_settings, auth_settings, settings
+from core.config import auth_settings, billing_settings, settings
 from db.http import get_client
 
 if TYPE_CHECKING:
@@ -16,8 +16,8 @@ if TYPE_CHECKING:
 
 class BillingService:
     def __init__(
-            self,
-            client: "httpx_client.AsyncOAuth2Client",
+        self,
+        client: "httpx_client.AsyncOAuth2Client",
     ) -> None:
         self.client = client
 
@@ -52,26 +52,28 @@ class BillingService:
         response = await self._send_request(
             method="POST",
             url=urljoin(billing_settings.service_base_url, billing_settings.new_uri),
-            data=kwargs)
+            data=kwargs,
+        )
         return response.text
 
     async def payments_cancel(self, **kwargs) -> str:
         response = await self._send_request(
             method="POST",
             url=urljoin(billing_settings.service_base_url, billing_settings.refund_uri),
-            data=kwargs)
+            data=kwargs,
+        )
         return response.text
 
-    async def payments_renew(self, uri, **kwargs):
+    async def payments_renew(self, **kwargs):
         response = await self._send_request(
             method="POST",
             url=urljoin(billing_settings.service_base_url, billing_settings.renew_uri),
-            data=kwargs)
+            data=kwargs,
+        )
         return response.text
 
 
-@lru_cache(
-)
+@lru_cache
 def get_billing_service(
     client: "httpx.AsyncClient" = Depends(get_client),
 ) -> BillingService:

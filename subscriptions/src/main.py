@@ -16,10 +16,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from starlette.requests import Request
 
 from api.v1 import me_user_subscriptions, subscription_types, user_subscription_types, user_subscriptions
-from core.config import postgres_settings, settings, billing_settings
+from core.config import billing_settings, postgres_settings, settings
 from core.logger import LOGGING
 from core.tracer import configure_tracer
-from db import postgres, http
+from db import http, postgres
 
 
 @asynccontextmanager
@@ -48,7 +48,7 @@ async def lifespan(_: FastAPI) -> typing.AsyncGenerator:
     scheduler = AsyncIOScheduler()
     scheduler.add_job(
         subscriptions_renewal_job,
-        CronTrigger.from_crontab("* * * * *"),
+        CronTrigger.from_crontab("0 15 * * *"),
     )
     scheduler.start()
 
