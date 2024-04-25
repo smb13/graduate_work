@@ -185,6 +185,15 @@ services       :
       PORT: 8000
       OTEL_SERVICE_NAME: billing
 
+  subscription:
+    <<: *base-settings
+    build:
+      context: ./subscriptions
+      network: host
+    environment:
+      PORT: 8000
+      OTEL_SERVICE_NAME: subscription
+
   rabbit:
     image: rabbitmq:3.13-management
     <<: *base-settings
@@ -228,5 +237,6 @@ volumes        :
   es_data:
   redis_data:
   admin_data:
+  scheduler_data:
   es_logs_data:
   filebeat_data:

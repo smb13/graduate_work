@@ -230,6 +230,29 @@ services        :
         gelf-address: udp://127.0.0.1:5044
         tag: apps
 
+  subscription:
+    extends:
+      file: docker-compose-base.yml
+      service: subscription
+    volumes:
+    -   ./subscriptions/src:/src
+    environment:
+      DEBUG: true
+      BILLING_HOST: billing_dev
+      BILLING_PORT: 8000
+      POSTGRES_HOST: postgres
+    ports:
+    -   8880:8000
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging:
+      driver: gelf
+      options:
+        gelf-address: udp://127.0.0.1:5044
+        tag: apps
+
   rabbit:
     extends:
       file: docker-compose-base.yml
