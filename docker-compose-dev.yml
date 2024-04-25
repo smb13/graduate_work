@@ -63,6 +63,8 @@ services        :
       DEBUG: true
       FORWARDED_ALLOW_IPS: '*'
       REDIS_HOST: redis
+      SUBSCRIPTION_SERVICE_HOST: subscription_dev
+      SUBSCRIPTION_SERVICE_PORT: 8000
     depends_on:
       redis:
         condition: service_healthy
@@ -301,6 +303,8 @@ services        :
     extends:
       file: docker-compose-base.yml
       service: redis
+    ports:
+    - "6379:6379"
     volumes:
     -   redis_data:/data
 

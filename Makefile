@@ -38,6 +38,10 @@ prod:
 dev:
 	docker compose $(DOCKER_COMPOSE_DEV) up -d --build --remove-orphans
 
+
+jaeger:
+	docker compose $(DOCKER_COMPOSE_DEV) up --wait -d jaeger
+
 # Redis
 
 redis:  # Запустить контейнер Redis server
