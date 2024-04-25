@@ -37,41 +37,42 @@ oauth2_scheme = OAuth2PasswordBearer(
 class AuthService(BaseService):
     async def make_access_token(self, user: User, role_codes: Sequence[str]) -> str:
         payload = {
-            'data': {
-                "sub": str(user.id), "roles": role_codes, "type": "access"
+            "data": {
+                "sub": str(user.id),
+                "roles": role_codes,
+                "type": "access",
             },
-            'secret_key': settings.jwt_access_token_secret_key
+            "secret_key": settings.jwt_access_token_secret_key,
         }
 
         # Получение подписок из кэша.
-        subs = await self.redis.get("subscriptions:" + str(user.id))
-        if subs:
+        cached_subscriptions = await self.redis.get("subscriptions:" + str(user.id))
+        if cached_subscriptions:
             try:
-                payload["data"]["subs"] = orjson.loads(subs)
+                payload["data"]["subs"] = orjson.loads(cached_subscriptions)
             except ValueError:
-                subs = None
+                cached_subscriptions = None
 
-        if not subs:
-            print('\nNO CACHE\n')
+        if not cached_subscriptions:
             # Создание временного токена.
-            token, _ = await generate_jwt_signed_token(**payload, expires_minutes=1)
+            token, _ = await generate_jwt_signed_token(**payload, expires_minutes=10)
 
             # Получение списка подписок
             try:
                 async with aiohttp.ClientSession(headers={"Authorization": f"Bearer {token}"}) as session:
                     async with session.get(
-                            f"{settings.subscription_service_base_url}/api/v1/user_subscriptions",
-                            params={'user_id': str(user.id)}
+                        f"{settings.subscription_service_base_url}/api/v1/user_subscriptions",
+                        params={"user_id": str(user.id)},
                     ) as response:
-                        payload['data']['subs'] = [sub['type_id'] for sub in await response.json()]
-            except Exception as e:
-                print(f'\n{e}\n')
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+                        payload["data"]["subs"] = [sub["type_id"] for sub in await response.json()]
+            except Exception as exc:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Forbidden: {exc}")
 
             # Сохранение в кэш
             await self.redis.set(
-                "subscriptions:" + str(user.id), orjson.dumps(payload['data']['subs']),
-                ex=settings.jwt_access_token_expires_minutes * 60
+                "subscriptions:" + str(user.id),
+                orjson.dumps(payload["data"]["subs"]),
+                ex=settings.jwt_access_token_expires_minutes * 60,
             )
 
         token, _ = await generate_jwt_signed_token(**payload, expires_minutes=settings.jwt_access_token_expires_minutes)

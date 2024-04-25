@@ -63,7 +63,7 @@ services        :
       DEBUG: true
       FORWARDED_ALLOW_IPS: '*'
       REDIS_HOST: redis
-      SUBSCRIPTION_SERVICE_HOST: subscriptions_dev
+      SUBSCRIPTION_SERVICE_HOST: subscription
       SUBSCRIPTION_SERVICE_PORT: 8000
     depends_on:
       redis:
@@ -93,7 +93,7 @@ services        :
     environment:
       DEBUG: true
       SERVICE_AUTH_API_BASE_PATH: http://auth_dev:8000/api/v1
-      SUBSCRIPTION_SERVICE_HOST: subscriptions_dev
+      SUBSCRIPTION_SERVICE_HOST: subscription
       SUBSCRIPTION_SERVICE_PORT: 8000
     ports:
     -   8080:8000    # Торчит наружу только при запущенном dev-сервере, на проде торчать не будет
@@ -218,7 +218,7 @@ services        :
       DEBUG: true
       AUTH_SERVICE_HOST: auth_dev
       AUTH_SERVICE_PORT: 8000
-      SUBSCRIPTION_SERVICE_HOST: subscriptions_dev
+      SUBSCRIPTION_SERVICE_HOST: subscription
       SUBSCRIPTION_SERVICE_PORT: 8000
     ports:
     -   8800:8000
@@ -306,7 +306,7 @@ services        :
       file: docker-compose-base.yml
       service: redis
     ports:
-    - "6379:6379"
+    -   6379:6379
     volumes:
     -   redis_data:/data
 
