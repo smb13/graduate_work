@@ -242,8 +242,10 @@ services        :
     -   ./subscriptions/src:/src
     environment:
       DEBUG: true
-      BILLING_HOST: billing_dev
+      BILLING_HOST: billing
       BILLING_PORT: 8000
+      AUTH_HOST: auth_dev
+      AUTH_PORT: 8000
       POSTGRES_HOST: postgres
     ports:
     -   8880:8000

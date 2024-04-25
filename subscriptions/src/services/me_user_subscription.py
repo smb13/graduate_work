@@ -16,13 +16,13 @@ from services.billing import BillingService, get_billing_service
 
 
 class MeUserSubscriptionService:
-    def __init__(self, db: AsyncSession, billing_service: BillingService):
+    def __init__(self, db: AsyncSession, billing_service: BillingService) -> None:
         self.db = db
         self.billing_service = billing_service
 
     async def list_user_subscriptions(self, user: dict) -> Sequence[UserSubscription]:
         user_id = UUID(user["sub"])
-        user_subscriptions = (
+        return (
             (
                 await self.db.execute(
                     select(UserSubscription).where(
@@ -34,13 +34,12 @@ class MeUserSubscriptionService:
             .scalars()
             .all()
         )
-        return user_subscriptions
 
     async def create_user_subscription(
         self,
         user: dict,
         subscription_type_id: int,
-    ) -> str | Exception:
+    ) -> dict | Exception:
         user_id = UUID(user["sub"])
         today = date.today()
         subscription_type = (
@@ -106,7 +105,7 @@ class MeUserSubscriptionService:
                 await self.db.rollback()
                 if isinstance(e.orig, UniqueViolation):
                     raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="User subscription already exists")
-                raise e
+                raise
             await self.db.refresh(user_subscription)
         else:
             user_subscription = exist_new_subscriptions
@@ -123,7 +122,7 @@ class MeUserSubscriptionService:
             .values(status=SubscriptionStatus.AWAITING_PAYMENT),
         )
         await self.db.commit()
-        return payment_url
+        return {"confirmation_url": payment_url}
 
     async def cancel_user_subscription(
         self,
@@ -184,12 +183,11 @@ class MeUserSubscriptionService:
         if refund_amount == 0:
             raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Refund amount equal to zero")
 
-        response = await self.billing_service.payments_cancel(
+        return await self.billing_service.payments_cancel(
             payment_method_id=str(active_user_subscription.payment_method_id),
             subscription_id=str(active_user_subscription.id),
             amount=refund_amount,
         )
-        return response
 
 
 @lru_cache

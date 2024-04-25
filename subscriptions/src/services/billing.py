@@ -46,29 +46,29 @@ class BillingService:
             await self._authenticate()
             response = await self.client.request(method=method, url=url, **kwargs)
         response.raise_for_status()
-        return response
+        return response.json()
 
     async def payments_new(self, **kwargs) -> str:
         response = await self._send_request(
             method="POST",
             url=urljoin(billing_settings.service_base_url, billing_settings.new_uri),
-            data=kwargs,
+            json=kwargs,
         )
-        return response.text
+        return response.get("confirmation_url")
 
     async def payments_cancel(self, **kwargs) -> str:
         response = await self._send_request(
             method="POST",
             url=urljoin(billing_settings.service_base_url, billing_settings.refund_uri),
-            data=kwargs,
+            json=kwargs,
         )
         return response.text
 
-    async def payments_renew(self, **kwargs):
+    async def payments_renew(self, **kwargs) -> str:
         response = await self._send_request(
             method="POST",
             url=urljoin(billing_settings.service_base_url, billing_settings.renew_uri),
-            data=kwargs,
+            json=kwargs,
         )
         return response.text
 

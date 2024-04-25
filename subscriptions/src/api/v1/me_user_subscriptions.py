@@ -29,7 +29,7 @@ async def create_user_subscription(
     subscription_type_id: int,
     me_user_subscription_service: MeUserSubscriptionService = Depends(get_me_user_subscription_service),
     user: dict = Depends(security_jwt),
-) -> str | Exception:
+) -> dict | Exception:
     return await me_user_subscription_service.create_user_subscription(
         user=user,
         subscription_type_id=subscription_type_id,
