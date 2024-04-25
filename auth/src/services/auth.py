@@ -47,7 +47,7 @@ class AuthService(BaseService):
         subs = await self.redis.get("subscriptions:" + str(user.id))
         if subs:
             try:
-                payload["data"]["sub"] = orjson.loads(subs)
+                payload["data"]["subs"] = orjson.loads(subs)
             except ValueError:
                 subs = None
 
