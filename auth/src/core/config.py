@@ -4,6 +4,7 @@ from logging import config as logging_config
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
+from core.utils import get_base_url
 from core.logger import LOGGING
 
 # Применяем настройки логирования
@@ -45,7 +46,22 @@ class Settings(BaseSettings):
     google_client_id: str
     google_client_secret: str
 
+    jaeger_agent_host: str = Field(alias="JAEGER_AGENT_HOST", default="jaeger")
     jaeger_agent_port: int = 6831
+    jaeger_to_console: bool = Field(alias="JAEGER_TO_CONSOLE", default=False)
+
+    subscription_service_host: str = "subscription"
+    subscription_service_port: str = "8000"
+
+    local_user_email: str = ""
+    local_user_password: str = ""
+
+    @property
+    def subscription_service_base_url(self) -> str:
+        return get_base_url(
+            settings.subscription_service_host,
+            settings.subscription_service_port,
+        )
 
 
 # Корень проекта

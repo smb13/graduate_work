@@ -18,6 +18,7 @@ class FilmShortExternal(BaseModel):
     uuid: UUID4
     title: str
     imdb_rating: float
+    subscriptions: list[int]
 
 
 class FilmDetailExternal(FilmShortExternal):

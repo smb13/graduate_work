@@ -17,6 +17,11 @@ class FilmWork(UUIDMixin, TimeStampedMixin):
         through="movies.PersonFilmWork",
         verbose_name=_("persons"),
     )
+    sub = models.ManyToManyField(
+        "movies.Subscription",
+        through="movies.SubscriptionFilmWork",
+        verbose_name=_("subscription"),
+    )
 
     title = models.CharField(_("title"), max_length=255)
     description = models.TextField(_("description"), blank=True)

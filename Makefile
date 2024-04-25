@@ -38,6 +38,10 @@ prod:
 dev:
 	docker compose $(DOCKER_COMPOSE_DEV) up -d --build --remove-orphans
 
+
+jaeger:
+	docker compose $(DOCKER_COMPOSE_DEV) up --wait -d jaeger
+
 # Redis
 
 redis:  # Запустить контейнер Redis server
@@ -111,6 +115,11 @@ db_create_scheduler: # Создать базу данных для сервис�
 	"echo \"SELECT 'CREATE DATABASE $(POSTGRES_SCHEDULER_DB)' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = "\
 	"'$(POSTGRES_SCHEDULER_DB)')\gexec\" | psql -U $(POSTGRES_USER)"
 
+db_create_subscriptions: # Создать базу данных для сервиса scheduler
+	docker compose $(DOCKER_COMPOSE_DEV) exec -i postgres bash -c "/etc/db_dump/wait-for-postgres.sh localhost && "\
+	"echo \"SELECT 'CREATE DATABASE $(POSTGRES_SUBSCRIPTIONS_DB)' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = "\
+	"'$(POSTGRES_SUBSCRIPTIONS_DB)')\gexec\" | psql -U $(POSTGRES_USER)"
+
 db_drop_auth: # Удалить базу данных для сервиса auth
 	docker compose $(DOCKER_COMPOSE_DEV) exec -i postgres bash -c "/etc/db_dump/wait-for-postgres.sh localhost && "\
 	"echo \"SELECT 'DROP DATABASE $(POSTGRES_AUTH_DB)' WHERE EXISTS (SELECT FROM pg_database WHERE datname = "\
@@ -163,6 +172,11 @@ auth_migrations:
 ## make auth_downgrade_migration: команда для отката последней ревизии
 auth_downgrade_migration:
 	docker compose $(DOCKER_COMPOSE_PROD) run --rm auth alembic downgrade -1
+
+# Subscriptions
+
+subscription_dev:  # Собрать и запустить тестовый контейнер Subscriptions
+	docker compose $(DOCKER_COMPOSE_DEV) up --build -d subscription
 
 
 # Django Admin

@@ -75,6 +75,7 @@ class CustomBackend(BaseBackend):
         payload_login = {"username": username, "password": password}
 
         access_token = self.__get_bearer_token(request)
+        refresh_token = None
 
         if not access_token:
             oauth_tokens = self._request_external_auth(
@@ -86,6 +87,7 @@ class CustomBackend(BaseBackend):
                 raise PermissionDenied
 
             access_token = oauth_tokens.get("access_token")
+            refresh_token = oauth_tokens.get("refresh_token")
             if not access_token:
                 raise PermissionDenied
 
@@ -111,6 +113,8 @@ class CustomBackend(BaseBackend):
 
             user.is_admin = "admin" in payload.get("roles", [])
             user.is_active = True
+            user.access_token = access_token
+            user.refresh_token = refresh_token
             user.save()
 
             return user
