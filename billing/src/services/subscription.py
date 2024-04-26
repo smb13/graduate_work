@@ -31,14 +31,11 @@ class SubscriptionService:
     async def _authenticate(self) -> None:
         """Для отладки.
         TODO: На проде надо заменить auth сервис на"""
-        try:
-            await self.client.fetch_token(
-                url=self._auth_url,
-                username=settings.local_user_email,
-                password=settings.local_user_password,
-            )
-        except Exception as exp:
-            pass
+        await self.client.fetch_token(
+            url=self._auth_url,
+            username=settings.local_user_email,
+            password=settings.local_user_password,
+        )
 
     @backoff.on_exception(
         backoff.expo,
