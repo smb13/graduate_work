@@ -17,8 +17,8 @@ if TYPE_CHECKING:
 
 class SubscriptionService:
     def __init__(
-        self,
-        client: "httpx_client.AsyncOAuth2Client",
+            self,
+            client: "httpx_client.AsyncOAuth2Client",
     ) -> None:
         self.client = client
 
@@ -52,20 +52,29 @@ class SubscriptionService:
         response.raise_for_status()
         return response
 
-    async def activate_subscription(self, subscription_id: str) -> None:
+    async def activate_subscription(self, subscription_id: str, **kwargs) -> None:
         try:
-            await self._send_request("PATCH", f"/subscriptions/{subscription_id}/activate")
+            await self._send_request(method="POST",
+                                     url=urljoin(settings.subscription_service_base_url,
+                                                 f"/api/v1/user_subscriptions/{subscription_id}/activate"
+                                                 ),
+                                     json=kwargs,
+                                     )
         except (httpx.HTTPStatusError, OAuthError, RuntimeError, httpx.ConnectError) as exc:
             raise ServiceError(f"Subscription activation failed: {exc}") from exc
 
     async def cancel_subscription(self, subscription_id: str) -> None:
         try:
-            await self._send_request("PATCH", f"/subscriptions/{subscription_id}/cancel")
+            await self._send_request("POST",
+                                     urljoin(settings.subscription_service_base_url,
+                                             f"/api/v1/user_subscriptions/{subscription_id}/cancel"
+                                             )
+                                     )
         except (httpx.HTTPStatusError, OAuthError, RuntimeError, httpx.ConnectError) as exc:
             raise ServiceError(f"Subscription cancellation failed: {exc}") from exc
 
 
 def get_subscription_service(
-    client: "httpx.AsyncClient" = Depends(get_client),
+        client: "httpx.AsyncClient" = Depends(get_client),
 ) -> SubscriptionService:
     return SubscriptionService(client=client)

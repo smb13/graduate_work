@@ -180,14 +180,22 @@ class MeUserSubscriptionService:
         else:
             refund_amount = ((today - date_of_last_renewal).days // days_in_month) * subscription_type.monthly_price
 
-        if refund_amount == 0:
-            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Refund amount equal to zero")
+        if not refund_amount == 0:
+            return await self.billing_service.payments_cancel(
+                payment_method_id=str(active_user_subscription.payment_method_id),
+                subscription_id=str(active_user_subscription.id),
+                amount=refund_amount,
+            )
 
-        return await self.billing_service.payments_cancel(
-            payment_method_id=str(active_user_subscription.payment_method_id),
-            subscription_id=str(active_user_subscription.id),
-            amount=refund_amount,
+        await self.db.execute(
+            update(UserSubscription)
+            .where(UserSubscription.id == user_subscription_id)
+            .values(
+                status=SubscriptionStatus.INACTIVE,
+                end_of_subscription=today,
+            ),
         )
+        await self.db.commit()
 
 
 @lru_cache

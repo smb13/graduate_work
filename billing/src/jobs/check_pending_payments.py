@@ -1,3 +1,5 @@
+import asyncio
+
 from clients.alchemy import get_session
 from clients.redis import get_redis
 from clients.subscription import get_client
@@ -55,7 +57,10 @@ async def check_pending() -> None:
             match payment.status:
                 case PaymentStatusEnum.succeeded:
                     try:
-                        await subscription_service.activate_subscription(subscription_id=transaction.subscription_id)
+                        await subscription_service.activate_subscription(
+                            subscription_id=transaction.subscription_id,
+                            payment_method_id=str(transaction.external_id)
+                        )
                     except ServiceError:
                         await transaction_service.increment_attempts(
                             transaction_id=transaction.id,
@@ -86,3 +91,9 @@ async def check_pending() -> None:
                     await transaction_service.increment_attempts(
                         transaction_id=transaction.id,
                     )
+
+
+async def check_pending_job() -> None:
+    """Process of the subscriptions' renewal."""
+    loop = asyncio.get_event_loop()
+    await loop.create_task(check_pending())

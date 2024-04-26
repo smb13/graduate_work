@@ -1,5 +1,5 @@
 import datetime as dt
-
+import asyncio
 from clients.alchemy import get_session
 from clients.redis import get_redis
 from clients.subscription import get_client
@@ -91,3 +91,9 @@ async def process_recurring() -> None:
                     )
                 case _:
                     raise ValueError(f"Unexpected payment status: {payment.status}")
+
+
+async def process_recurring_job() -> None:
+    """Process of the subscriptions' renewal."""
+    loop = asyncio.get_event_loop()
+    await loop.create_task(process_recurring())

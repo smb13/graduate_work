@@ -25,7 +25,7 @@ description = """Проведение платежей и автоплатеже
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
     from jobs.check_pending_payments import check_pending
-    from jobs.process_recurring_payments import process_recurring
+    from jobs.process_recurring_payments import process_recurring_job
 
     redis.redis = Redis(
         host=settings.redis_host,
@@ -59,8 +59,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     scheduler = AsyncIOScheduler()
     scheduler.start()
     scheduler.add_job(
-        process_recurring,
-        CronTrigger.from_crontab("* * * * *"),
+        process_recurring_job,
+        CronTrigger.from_crontab("0 15 * * *"),
     )
     scheduler.add_job(
         check_pending,
@@ -117,5 +117,5 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
+        port=8080,
     )
