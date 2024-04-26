@@ -69,7 +69,7 @@ async def cancel_user_subscription(
     },
 )
 @check_access({Roles.user})
-async def list_roles(
+async def list_user_subscriptions(
     me_user_subscription_service: MeUserSubscriptionService = Depends(get_me_user_subscription_service),
     user: dict = Depends(security_jwt),
 ) -> Sequence[UserSubscription]:
