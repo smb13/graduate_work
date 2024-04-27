@@ -13,5 +13,5 @@ class BaseService:
         self.jwt = jwt
         self.mongo = mongo
 
-    def db(self):
+    def db(self) -> AgnosticClient:
         return self.mongo[settings.mongo_db][settings.mongo_notifications_collection]

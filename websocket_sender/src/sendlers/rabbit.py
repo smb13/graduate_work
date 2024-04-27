@@ -2,6 +2,7 @@ import asyncio
 
 import backoff
 from aio_pika import connect
+from aio_pika.abc import AbstractConnection
 from aiormq import AMQPConnectionError
 from src.core.config import settings
 from src.core.logger import logger
@@ -9,18 +10,17 @@ from src.sendlers.websocket import send_by_websocket
 
 
 @backoff.on_exception(backoff.expo, AMQPConnectionError, max_tries=settings.app.backoff_max_tries)
-async def init_rabbit():
+async def init_rabbit() -> AbstractConnection:
     """Подключение к rabbit mq."""
-    connection = await connect(
+    return await connect(
         host=settings.rabbit.host,
         port=settings.rabbit.port,
         login=settings.rabbit.user,
         password=settings.rabbit.password,
     )
-    return connection
 
 
-async def process_notifications():
+async def process_notifications() -> None:
     """Отправка сообщения в rabbit."""
     connection = await init_rabbit()
     async with connection:

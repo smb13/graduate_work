@@ -26,16 +26,16 @@ WS_URL = (
     else "ws://127.0.0.1:8080"
 )
 
-JWT_KEY = os.getenv("JWT_SECRET") if bool(os.getenv("JWT_SECRET")) else "BIG_BIG_SECRET"
+JWT_KEY = os.getenv("JWT_SECRET") if os.getenv("JWT_SECRET") else "BIG_BIG_SECRET"
 USER_UUID = fake.uuid4()
 
 
-async def encode_jwt_token():
+async def encode_jwt_token() -> str:
     token = {"sub": str(USER_UUID), "exp": datetime.now(tz=timezone.utc) + timedelta(hours=10)}
     return jwt.encode(token, JWT_KEY, algorithm="HS256")
 
 
-async def main():
+async def main() -> None:
     async with websockets.connect(WS_URL) as websocket:
         token = await encode_jwt_token()
         data_to_send = json.dumps({"jwt_token": token})

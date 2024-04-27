@@ -1,9 +1,12 @@
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from events.worker.core.config import AuthJwtSettings
 from fastapi_jwt_auth2 import AuthJWT
 
 from core.config import authjwt_settings
+
+if TYPE_CHECKING:
+    from events.worker.core.config import AuthJwtSettings
 
 
 @AuthJWT.load_config
@@ -12,7 +15,7 @@ def get_config() -> AuthJwtSettings:
 
 
 class JWTGetter:
-    def __init__(self):
+    def __init__(self) -> None:
         self.headers = self.get_new_headers()
 
     def get_headers(self) -> dict:

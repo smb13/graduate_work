@@ -11,12 +11,12 @@ from websockets.server import WebSocketServerProtocol
 ws_connT: dict[str, websockets.server.WebSocketServerProtocol] = {}
 
 
-async def handler(ws: WebSocketServerProtocol):
+async def handler(ws: WebSocketServerProtocol) -> None:
     """Обработчик websocket."""
     jwt_token = json.loads(await ws.recv())
     if (user_id := await decode_jwt_and_get_userid(jwt_token.get("jwt_token"))) is None:
         await ws.close(1011, "Некорректный JWT токен")
-        return
+        return None
 
     ws_connT[user_id] = ws
     logger.warning("Пользователь подключен %s", user_id)

@@ -15,17 +15,17 @@ class Roles(str, Enum):
     admin = "admin"
 
 
-def check_access(allow_roles: set):
-    def inner(function):
-        @wraps(function)
-        async def wrapper(*args, **kwargs):
+def check_access(allow_roles: set) -> callable:
+    def inner(function: callable):
+        @wraps(function)  # ANN201
+        async def wrapper(*args, **kwargs) -> callable:
             user = kwargs.get("user")
             if not user:
-                return
+                return None
             user_roles = user["roles"]
             if Roles.admin not in user_roles:
                 if allow_roles is None:
-                    return
+                    return None
                 if not allow_roles & set(user_roles):
                     raise HTTPException(
                         status_code=http.HTTPStatus.FORBIDDEN,
@@ -47,7 +47,7 @@ def decode_token(token: str) -> dict | None:
 
 
 class JWTBearer(HTTPBearer):
-    def __init__(self, auto_error: bool = True):
+    def __init__(self, auto_error: bool = True) -> None:
         super().__init__(auto_error=auto_error)
 
     async def __call__(self, request: Request) -> dict:

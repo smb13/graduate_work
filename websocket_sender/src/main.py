@@ -7,7 +7,7 @@ from src.sendlers.rabbit import process_notifications
 from src.sendlers.websocket import handler
 
 
-async def main():
+async def main() -> None:
     """Точка запуска приложения."""
     async with websockets.serve(handler, settings.websocket.host, settings.websocket.port):
         logger.info("Старт вебсокета на %s:%s", settings.websocket.host, settings.websocket.port)

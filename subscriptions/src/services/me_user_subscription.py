@@ -180,7 +180,7 @@ class MeUserSubscriptionService:
         else:
             refund_amount = ((today - date_of_last_renewal).days // days_in_month) * subscription_type.monthly_price
 
-        if not refund_amount == 0:
+        if refund_amount != 0:
             return await self.billing_service.payments_cancel(
                 payment_method_id=str(active_user_subscription.payment_method_id),
                 subscription_id=str(active_user_subscription.id),
@@ -196,6 +196,7 @@ class MeUserSubscriptionService:
             ),
         )
         await self.db.commit()
+        return "Subscription canceled"
 
 
 @lru_cache

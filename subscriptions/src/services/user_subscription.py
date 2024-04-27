@@ -14,10 +14,10 @@ from schemas.user_subscription import PaymentMethodId
 
 
 class UserSubscriptionService:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    async def activate_subscription(self, user_subscription_id: UUID, payment_method_id: PaymentMethodId):
+    async def activate_subscription(self, user_subscription_id: UUID, payment_method_id: PaymentMethodId) -> None:
         user_subscription = (
             (
                 await self.db.execute(
@@ -65,7 +65,7 @@ class UserSubscriptionService:
             )
         await self.db.commit()
 
-    async def cancel_subscription(self, user_subscription_id) -> None:
+    async def cancel_subscription(self, user_subscription_id: UUID) -> None:
         user_subscription = (
             (
                 await self.db.execute(
@@ -102,7 +102,7 @@ class UserSubscriptionService:
         subscription_type_id: int | None,
     ) -> Sequence[UserSubscription]:
         if subscription_type_id:
-            user_subscriptions = (
+            return (
                 (
                     await self.db.execute(
                         select(UserSubscription).where(
@@ -119,7 +119,7 @@ class UserSubscriptionService:
             )
 
         else:
-            user_subscriptions = (
+            return (
                 (
                     await self.db.execute(
                         select(UserSubscription).where(
@@ -133,7 +133,6 @@ class UserSubscriptionService:
                 .scalars()
                 .all()
             )
-        return user_subscriptions
 
 
 @lru_cache

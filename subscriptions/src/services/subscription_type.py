@@ -15,7 +15,7 @@ from schemas.subscription_type import SubscriptionTypeBase, SubscriptionTypeResp
 
 
 class SubscriptionTypeService:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
     async def list_current_subscription_types(self) -> list[SubscriptionTypeResponse]:
@@ -30,13 +30,13 @@ class SubscriptionTypeService:
             )
             .order_by(SubscriptionType.name),
         )
-        subscription_types = result.scalars().all()
-        return subscription_types
+
+        return result.scalars().all()
 
     async def list_all_subscription_types(self) -> list[SubscriptionTypeResponse]:
         result = await self.db.execute(select(SubscriptionType))
-        subscription_types = result.scalars().all()
-        return subscription_types
+
+        return result.scalars().all()
 
     async def create_subscription_type(
         self,
@@ -50,7 +50,7 @@ class SubscriptionTypeService:
             await self.db.rollback()
             if isinstance(e.orig, UniqueViolation):
                 raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Subscription type already exists")
-            raise e
+            raise
         await self.db.refresh(subscription_type)
         return subscription_type
 
@@ -66,13 +66,13 @@ class SubscriptionTypeService:
             )
         except IntegrityError as e:
             await self.db.rollback()
-            if isinstance(e.orig, UniqueViolation):
-                if "subscription_type_name_key" in str(e):
-                    raise HTTPException(
-                        status_code=HTTPStatus.BAD_REQUEST,
-                        detail="Another subscription type has the same name",
-                    )
-            raise e
+            if isinstance(e.orig, UniqueViolation) and "subscription_type_name_key" in str(e):
+                raise HTTPException(
+                    status_code=HTTPStatus.BAD_REQUEST,
+                    detail="Another subscription type has the same name",
+                )
+            raise
+
         await self.db.commit()
         result = await self.db.execute(select(SubscriptionType).where(SubscriptionType.id == subscription_type_id))
         return result.scalars().first()
