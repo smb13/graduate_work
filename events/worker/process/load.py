@@ -20,7 +20,7 @@ class NotificationLoader:
     ) -> Generator[None, tuple[RabbitMQConsumer, RabbitMQPublisher, list[dict[str, str | ModelsSchemas]]], None]:
         while notification_messages := (yield):  # type: ignore
             acked_rmq_messages = []
-            mess_counter = 0
+            mess_counter = 0  # noqa: SIM113
             for notification_message in notification_messages:
                 try:
                     publisher.publish(

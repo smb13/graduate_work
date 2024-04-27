@@ -1,12 +1,13 @@
 from uuid import uuid4
 
+from events.worker.core.config import AuthJwtSettings
 from fastapi_jwt_auth2 import AuthJWT
 
 from core.config import authjwt_settings
 
 
 @AuthJWT.load_config
-def get_config():
+def get_config() -> AuthJwtSettings:
     return authjwt_settings
 
 

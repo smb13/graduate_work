@@ -30,7 +30,7 @@ def get_films_service(
             "writers_names",
             "title",
             "description",
-            "genre"
+            "genre",
         ),
     )
     return BaseService(cache=cache, database=database)

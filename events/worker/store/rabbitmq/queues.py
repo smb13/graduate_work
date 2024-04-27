@@ -16,7 +16,7 @@ class RmqQueue(Enum):
     EMAIL_GENERAL_NOTICE = ChannelType.EMAIL.value + "." + Actions.GENERAL_NOTICE.value
 
 
-def get_rmq_queues_list():
+def get_rmq_queues_list() -> list[str]:
     return [
         ChannelType.PUSH.value + "." + Actions.REVIEW_LIKE.value,
         ChannelType.EMAIL.value + "." + Actions.WEEKLY_BOOKMARKS.value,

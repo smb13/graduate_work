@@ -22,7 +22,14 @@ from core.logger import logger
 
 
 class RabbitMQConsumer(threading.Thread):
-    def __init__(self, queue: str, routing_key: str, consuming_messages: list[dict[str, str | Any]], *args, **kwargs):
+    def __init__(
+        self,
+        queue: str,
+        routing_key: str,
+        consuming_messages: list[dict[str, str | Any]],
+        *args,
+        **kwargs,
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.channel = None
         self.connection = None
@@ -31,7 +38,7 @@ class RabbitMQConsumer(threading.Thread):
         self.routing_key = routing_key
 
     @backoff.on_exception(logger=logger, **rabbitmq_settings.get_backoff_settings())
-    def connect(self):
+    def connect(self) -> "RabbitMQConsumer":
         try:
             credentials = pika.PlainCredentials(rabbitmq_settings.username, rabbitmq_settings.password)
             parameters = pika.ConnectionParameters(
@@ -66,16 +73,16 @@ class RabbitMQConsumer(threading.Thread):
             raise AMQPError
 
     @backoff.on_exception(logger=logger, **rabbitmq_settings.get_backoff_settings())
-    def run(self):
+    def run(self) -> None:
         self.connect()
         self.channel.start_consuming()
         self.channel.stop_consuming()
 
-    def stop(self):
+    def stop(self) -> None:
         if self.connection:
             self.connection.close()
 
-    def on_message(self, chan, method_frame, header_frame, body):
+    def on_message(self, chan: Any, method_frame: Any, header_frame: Any, body: bytes) -> None:
         match self.queue:
             case RmqQueue.PUSH_REVIEW_LIKE.value:
                 message = ReviewLikeModel(
@@ -97,7 +104,7 @@ class RabbitMQConsumer(threading.Thread):
         self.result.append({"type": self.queue, "message": message, "delivery_tag": method_frame.delivery_tag})
 
     @backoff.on_exception(logger=logger, **rabbitmq_settings.get_backoff_settings())
-    def message_ack(self, delivery_tag: int):
+    def message_ack(self, delivery_tag: int) -> None:
         try:
             self.channel.basic_ack(delivery_tag=delivery_tag)
         except AMQPError as err:

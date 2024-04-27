@@ -1,5 +1,6 @@
-import datetime as dt
 import asyncio
+import datetime as dt
+
 from clients.alchemy import get_session
 from clients.redis import get_redis
 from clients.subscription import get_client

@@ -59,7 +59,7 @@ async def check_pending() -> None:
                     try:
                         await subscription_service.activate_subscription(
                             subscription_id=transaction.subscription_id,
-                            payment_method_id=str(transaction.external_id)
+                            payment_method_id=str(transaction.external_id),
                         )
                     except ServiceError:
                         await transaction_service.increment_attempts(

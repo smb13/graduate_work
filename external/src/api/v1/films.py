@@ -51,7 +51,7 @@ async def films_search(
             uuid=film.id,
             title=film.title,
             imdb_rating=film.imdb_rating,
-            subscriptions=film.subscriptions
+            subscriptions=film.subscriptions,
         )
         for film in films
     ]
@@ -124,7 +124,7 @@ async def films_list(
             uuid=film.id,
             title=film.title,
             imdb_rating=film.imdb_rating,
-            subscriptions=film.subscriptions
+            subscriptions=film.subscriptions,
         )
         for film in films
     ]

@@ -1,4 +1,5 @@
 from django.db import models
+from django.http import HttpRequest
 from django.utils.translation import gettext_lazy as _
 
 from movies.models.common import TimeStampedMixin, UUIDMixin
@@ -32,9 +33,8 @@ class SubscriptionFilmWork(UUIDMixin):
     )
     created = models.DateTimeField(auto_now_add=True)
 
-    def get_results(self, request):
+    def get_results(self, request: HttpRequest) -> None:
         exit(1)
-        pass
 
     class Meta:
         db_table = 'content"."subscription_film_work'

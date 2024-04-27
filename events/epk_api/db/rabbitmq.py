@@ -17,7 +17,7 @@ class Actions(Enum):
     GENERAL_NOTICE = "general_notice"
 
 
-def get_rmq_queues_list():
+def get_rmq_queues_list() -> list[str]:
     return [
         ChannelType.PUSH.value + "." + Actions.REVIEW_LIKE.value,
         ChannelType.EMAIL.value + "." + Actions.WEEKLY_BOOKMARKS.value,
@@ -38,7 +38,7 @@ class RmqPublisher(threading.Thread):
         virtual_host: str,
         *args,
         **kwargs,
-    ):
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.is_running = True
         self.exchange = exchange
@@ -56,13 +56,13 @@ class RmqPublisher(threading.Thread):
         )
 
     @backoff.on_exception(**rabbitmq_settings.get_backoff_settings())
-    def connect(self):
+    def connect(self) -> None:
         self.connection = BlockingConnection(parameters=self.params)
         self.channel = self.connection.channel()
         for queue in self.queues:
             self.channel.queue_declare(queue=queue, durable=True)
 
-    def run(self):
+    def run(self) -> None:
         self.connect()
         while self.is_running:
             try:
@@ -71,7 +71,7 @@ class RmqPublisher(threading.Thread):
                 self.connect()
 
     @backoff.on_exception(**rabbitmq_settings.get_backoff_settings())
-    def _publish(self, routing_key: str, message: str, x_request_id: str):
+    def _publish(self, routing_key: str, message: str, x_request_id: str) -> None:
         try:
             self.channel.basic_publish(
                 exchange=self.exchange,
@@ -88,7 +88,7 @@ class RmqPublisher(threading.Thread):
             self.connect()
             raise AMQPError
 
-    def publish(self, routing_key: str, message: str, x_request_id: str):
+    def publish(self, routing_key: str, message: str, x_request_id: str) -> None:
         self.connection.add_callback_threadsafe(
             lambda: self._publish(
                 routing_key=routing_key,
@@ -97,7 +97,7 @@ class RmqPublisher(threading.Thread):
             ),
         )
 
-    def stop(self):
+    def stop(self) -> None:
         self.is_running = False
         self.connection.process_data_events(time_limit=1)
         if self.connection.is_open:

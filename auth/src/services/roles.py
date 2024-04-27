@@ -99,10 +99,10 @@ class RolesService(BaseService):
     async def get_roles_by_user(self, user: User) -> Sequence[Role]:
         """Retrieves Roles from PostgreSQL using SQLAlchemy"""
         roles = await self.session.scalars(
-            select(Role).
-            join(Role.role_bindings).
-            where(RoleBinding.user_id == user.id).
-            options(selectinload(Role.permissions))
+            select(Role)
+            .join(Role.role_bindings)
+            .where(RoleBinding.user_id == user.id)
+            .options(selectinload(Role.permissions)),
         )
         return roles.all()
 

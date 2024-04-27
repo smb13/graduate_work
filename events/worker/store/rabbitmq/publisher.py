@@ -12,7 +12,7 @@ from core.logger import logger
 
 
 class RabbitMQPublisher(threading.Thread):
-    def __init__(self, queue: str, *args, **kwargs):
+    def __init__(self, queue: str, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.is_running = True
         self.exchange = rabbitmq_settings.publish_exchange
@@ -31,7 +31,7 @@ class RabbitMQPublisher(threading.Thread):
         )
 
     @backoff.on_exception(logger=logger, **rabbitmq_settings.get_backoff_settings())
-    def connect(self):
+    def connect(self) -> None:
         self.connection = BlockingConnection(parameters=self.params)
         self.channel = self.connection.channel()
         self.channel.exchange_declare(
@@ -48,7 +48,7 @@ class RabbitMQPublisher(threading.Thread):
             routing_key=self.queue,
         )
 
-    def run(self):
+    def run(self) -> None:
         self.connect()
         while self.is_running:
             try:
@@ -58,7 +58,7 @@ class RabbitMQPublisher(threading.Thread):
                 self.connect()
 
     @backoff.on_exception(logger=logger, **rabbitmq_settings.get_backoff_settings())
-    def _publish(self, routing_key: str, message: str, x_request_id: str):
+    def _publish(self, routing_key: str, message: str, x_request_id: str) -> None:
         try:
             self.channel.basic_publish(
                 exchange=self.exchange,
@@ -76,7 +76,7 @@ class RabbitMQPublisher(threading.Thread):
             self.connect()
             raise AMQPError
 
-    def publish(self, message: str, x_request_id: str):
+    def publish(self, message: str, x_request_id: str) -> None:
         self.connection.add_callback_threadsafe(
             lambda: self._publish(
                 routing_key=self.queue,
@@ -85,7 +85,7 @@ class RabbitMQPublisher(threading.Thread):
             ),
         )
 
-    def stop(self):
+    def stop(self) -> None:
         self.is_running = False
         self.connection.process_data_events(time_limit=0)
         if self.connection.is_open:

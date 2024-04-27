@@ -62,7 +62,7 @@ class MoviesETL(PostgresToElasticsearch):
     enrich_queries: dict[str, str] = {
         "genres": SQL_GENRES,
         "persons": SQL_PERSONS,
-        "subscriptions": SQL_SUBSCRIPTIONS
+        "subscriptions": SQL_SUBSCRIPTIONS,
     }
 
     @staticmethod
@@ -79,7 +79,7 @@ class MoviesETL(PostgresToElasticsearch):
             "directors": [],
             "actors": [],
             "writers": [],
-            "subscriptions": item["subscriptions"]
+            "subscriptions": item["subscriptions"],
         }
         for person in item["persons"]:
             transformed_item[person["role"] + "s_names"].append(person["name"])
