@@ -39,7 +39,7 @@ class BillingService:
         exception=(httpx.HTTPStatusError, OAuthError),
         max_tries=billing_settings.backoff_max_tries,
     )
-    async def _send_request(self, method: str, url: str, **kwargs) -> "httpx.Response":
+    async def _send_request(self, method: str, url: str, **kwargs) -> dict:
         try:
             response = await self.client.request(method=method, url=url, **kwargs)
         except OAuthError:
@@ -49,28 +49,27 @@ class BillingService:
         return response.json()
 
     async def payments_new(self, **kwargs) -> str:
-        response = await self._send_request(
-            method="POST",
-            url=urljoin(billing_settings.service_base_url, billing_settings.new_uri),
-            json=kwargs,
-        )
-        return response.get("confirmation_url")
+        return (
+            await self._send_request(
+                method="POST",
+                url=urljoin(billing_settings.service_base_url, billing_settings.new_uri),
+                json=kwargs,
+            )
+        ).get("confirmation_url")
 
-    async def payments_cancel(self, **kwargs) -> str:
-        response = await self._send_request(
+    async def payments_cancel(self, **kwargs) -> dict:
+        return await self._send_request(
             method="POST",
             url=urljoin(billing_settings.service_base_url, billing_settings.refund_uri),
             json=kwargs,
         )
-        return response.text
 
-    async def payments_renew(self, **kwargs) -> str:
-        response = await self._send_request(
+    async def payments_renew(self, **kwargs) -> dict:
+        return await self._send_request(
             method="POST",
             url=urljoin(billing_settings.service_base_url, billing_settings.renew_uri),
             json=kwargs,
         )
-        return response.text
 
 
 @lru_cache

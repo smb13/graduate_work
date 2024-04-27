@@ -4,14 +4,10 @@ from contextlib import asynccontextmanager
 from http import HTTPStatus
 
 import uvicorn
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger
-from async_fastapi_jwt_auth import AuthJWT
 from authlib.integrations import httpx_client
 from fastapi import FastAPI, Response
 from fastapi.responses import ORJSONResponse
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from pydantic_settings import BaseSettings
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from starlette.requests import Request
 
@@ -24,8 +20,6 @@ from db import http, postgres
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> typing.AsyncGenerator:
-    from jobs.subscriptions_renewal import subscriptions_renewal_job
-
     postgres.engine = create_async_engine(
         **postgres_settings.get_connection_info(),
         echo=postgres_settings.echo,
@@ -37,31 +31,14 @@ async def lifespan(_: FastAPI) -> typing.AsyncGenerator:
         expire_on_commit=False,
     )
 
-    if settings.debug:
-        await postgres.create_database()
-
     http.client = httpx_client.AsyncOAuth2Client(
         base_url=billing_settings.service_base_url,
         token_endpoint_auth_method="client_secret_post",
     )
 
-    scheduler = AsyncIOScheduler()
-    scheduler.add_job(
-        subscriptions_renewal_job,
-        CronTrigger.from_crontab("0 15 * * *"),
-    )
-    scheduler.start()
-
     yield
 
     await http.client.aclose()
-
-    scheduler.shutdown()
-
-
-@AuthJWT.load_config
-def get_config() -> "BaseSettings":
-    return settings
 
 
 app = FastAPI(
