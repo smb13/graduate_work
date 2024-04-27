@@ -1,5 +1,6 @@
 import asyncio
 import datetime as dt
+import logging
 
 from clients.alchemy import get_session
 from clients.redis import get_redis
@@ -16,6 +17,8 @@ from services.base import ServiceError
 from services.payment import YooKassaPaymentService, get_yookassa_payment_service
 from services.subscription import SubscriptionService, get_subscription_service
 from services.transaction import TransactionService, get_transaction_service
+
+logger = logging.getLogger(__name__)
 
 
 @lifespan(None)
@@ -68,11 +71,12 @@ async def process_recurring() -> None:
 
                     try:
                         await subscription_service.activate_subscription(subscription_id=transaction.subscription_id)
-                    except ServiceError:
+                    except ServiceError as exc:
                         await transaction_service.increment_attempts(
                             transaction_id=transaction.id,
                         )
-                        continue
+                        logger.error(f"Subscription activation failed: {exc}")
+                        raise
 
                     await transaction_service.update_transaction_process_state(
                         transaction_id=transaction.id,
@@ -81,11 +85,13 @@ async def process_recurring() -> None:
                 case PaymentStatusEnum.canceled:
                     try:
                         await subscription_service.cancel_subscription(subscription_id=transaction.subscription_id)
-                    except ServiceError:
+                    except ServiceError as exc:
                         await transaction_service.increment_attempts(
                             transaction_id=transaction.id,
                         )
-                        continue
+                        logger.error(f"Subscription cancellation failed: {exc}")
+                        raise
+
                 case PaymentStatusEnum.pending:
                     await transaction_service.increment_attempts(
                         transaction_id=transaction.id,

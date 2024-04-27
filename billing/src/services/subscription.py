@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
@@ -13,6 +14,9 @@ from services.base import ServiceError
 
 if TYPE_CHECKING:
     from authlib.integrations import httpx_client
+
+
+logger = logging.getLogger(__name__)
 
 
 class SubscriptionService:
@@ -46,7 +50,8 @@ class SubscriptionService:
     async def _send_request(self, method: str, url: str, **kwargs) -> "httpx.Response":
         try:
             response: Response = await self.client.request(method=method, url=url, **kwargs)
-        except OAuthError:
+        except OAuthError as exc:
+            logger.error(f"Subscription activation failed: {exc}")
             await self._authenticate()
             response = await self.client.request(method=method, url=url, **kwargs)
         response.raise_for_status()
@@ -63,6 +68,7 @@ class SubscriptionService:
                 json=kwargs,
             )
         except (httpx.HTTPStatusError, OAuthError, RuntimeError, httpx.ConnectError) as exc:
+            logger.error(f"Subscription activation failed: {exc}")
             raise ServiceError(f"Subscription activation failed: {exc}") from exc
 
     async def cancel_subscription(self, subscription_id: str) -> None:
@@ -75,6 +81,7 @@ class SubscriptionService:
                 ),
             )
         except (httpx.HTTPStatusError, OAuthError, RuntimeError, httpx.ConnectError) as exc:
+            logger.error(f"Subscription cancellation failed: {exc}")
             raise ServiceError(f"Subscription cancellation failed: {exc}") from exc
 
 

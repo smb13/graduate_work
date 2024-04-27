@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from clients.alchemy import get_session
 from clients.redis import get_redis
@@ -14,6 +15,8 @@ from services.base import ServiceError
 from services.payment import YooKassaPaymentService, get_yookassa_payment_service
 from services.subscription import SubscriptionService, get_subscription_service
 from services.transaction import TransactionService, get_transaction_service
+
+logger = logging.getLogger(__name__)
 
 
 @lifespan(None)
@@ -61,11 +64,12 @@ async def check_pending() -> None:
                             subscription_id=transaction.subscription_id,
                             payment_method_id=str(transaction.external_id),
                         )
-                    except ServiceError:
+                    except ServiceError as exc:
                         await transaction_service.increment_attempts(
                             transaction_id=transaction.id,
                         )
-                        continue
+                        logger.error(f"Transaction confirmation failed: {exc}")
+                        raise
 
                     await transaction_service.update_transaction_process_state(
                         transaction_id=transaction.id,
@@ -75,11 +79,13 @@ async def check_pending() -> None:
                 case PaymentStatusEnum.canceled:
                     try:
                         await subscription_service.cancel_subscription(subscription_id=transaction.subscription_id)
-                    except ServiceError:
+                    except ServiceError as exc:
                         await transaction_service.increment_attempts(
                             transaction_id=transaction.id,
                         )
-                        continue
+                        logger.error(f"Transaction cancellation failed: {exc}")
+                        raise
+
                     await transaction_service.increment_attempts(
                         transaction_id=transaction.id,
                     )

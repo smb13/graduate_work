@@ -86,7 +86,7 @@ services       :
       retries: 3
 
   elastic:
-    image: elasticsearch:8.6.2
+    image: elasticsearch:8.12.2
     <<: [*base-settings, *elastic-envs]
     volumes:
     -   es_data:/usr/share/elasticsearch/data

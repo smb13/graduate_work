@@ -249,6 +249,11 @@ services        :
         condition: service_healthy
       redis:
         condition: service_healthy
+    logging:
+      driver: gelf
+      options:
+        gelf-address: udp://127.0.0.1:5044
+        tag: apps
 
   subscription:
     extends:
