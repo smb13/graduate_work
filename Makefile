@@ -266,6 +266,9 @@ websocket_sender: #
 billing_dev: #
 	docker compose $(DOCKER_COMPOSE_DEV) up --build -d billing
 
+billing_scheduler_dev: #
+	docker compose $(DOCKER_COMPOSE_DEV) up --build -d billing_scheduler
+
 # Rabbit MQ
 
 rabbit: # Запустить брокер RabbitMQ

@@ -3,8 +3,6 @@ from contextlib import asynccontextmanager
 from http import HTTPStatus
 
 import uvicorn
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger
 from authlib.integrations import httpx_client
 from clients import alchemy, redis, subscription
 from clients.yookassa import client as yookassa
@@ -24,9 +22,6 @@ description = """Проведение платежей и автоплатеже
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
-    from jobs.check_pending_payments import check_pending
-    from jobs.process_recurring_payments import process_recurring_job
-
     redis.redis = Redis(
         host=settings.redis_host,
         port=settings.redis_port,
@@ -56,17 +51,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         token_endpoint_auth_method="client_secret_post",
     )
 
-    scheduler = AsyncIOScheduler()
-    scheduler.start()
-    scheduler.add_job(
-        process_recurring_job,
-        CronTrigger.from_crontab("0 15 * * *"),
-    )
-    scheduler.add_job(
-        check_pending,
-        CronTrigger.from_crontab("* * * * *"),
-    )
-
     # Импорт моделей необходим для их автоматического создания
     from models import Transaction  # noqa
 
@@ -78,8 +62,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     await redis.redis.close()
 
     await subscription.client.aclose()
-
-    scheduler.shutdown()
 
     # Для очистки базы данных при выключении сервера if settings.debug: await alchemy.purge_database()
 
