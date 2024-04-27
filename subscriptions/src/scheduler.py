@@ -10,7 +10,7 @@ def main() -> None:
     scheduler = AsyncIOScheduler()
     scheduler.add_job(
         subscriptions_renewal_job,
-        CronTrigger.from_crontab("* * * * *"),
+        CronTrigger.from_crontab("0 15 * * *"),
     )
     scheduler.start()
 
