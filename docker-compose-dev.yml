@@ -262,7 +262,6 @@ services        :
     volumes:
     -   ./subscriptions/src:/src
     environment:
-      DEBUG: true
       BILLING_HOST: billing
       BILLING_PORT: 8000
       AUTH_HOST: auth_dev
@@ -270,9 +269,30 @@ services        :
       POSTGRES_HOST: postgres
     ports:
     -   8880:8000
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     depends_on:
       postgres:
+        condition: service_healthy
+    logging:
+      driver: gelf
+      options:
+        gelf-address: udp://127.0.0.1:5044
+        tag: apps
+
+  subscription_scheduler:
+    extends:
+      file: docker-compose-base.yml
+      service: subscription
+    environment:
+      BILLING_HOST: billing
+      BILLING_PORT: 8000
+      AUTH_HOST: auth_dev
+      AUTH_PORT: 8000
+      POSTGRES_HOST: postgres
+    command: python scheduler.py
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     logging:
       driver: gelf

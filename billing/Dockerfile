@@ -15,5 +15,7 @@ COPY requirements.txt /requirements.txt
 RUN /root/.cargo/bin/uv pip install --no-cache-dir -r /requirements.txt
 
 COPY src .
+COPY migration ./migration
+COPY alembic.ini .
 
 EXPOSE 8000

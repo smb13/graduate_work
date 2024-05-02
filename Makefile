@@ -17,11 +17,11 @@ help: # Вывод информации make командах
 
 # Start, First start
 
-first_start: postgres db_create admin_migrate redis redis_auth elastic etl prod auth_migrations auth_createsuperuser
+first_start: postgres db_create admin_migrate redis redis_auth elastic etl prod auth_migrations billing_migrations auth_createsuperuser
 
 first_start_dev: postgres_dev db_create db_restore redis_dev flush_redis_dev elastic_dev clear_elastic_index_dev etl_dev dev auth_createsuperuser_dev
 
-start: prod auth_migrations
+start: prod auth_migrations billing_migrations
 
 # Tests
 
@@ -173,10 +173,38 @@ auth_migrations:
 auth_downgrade_migration:
 	docker compose $(DOCKER_COMPOSE_PROD) run --rm auth alembic downgrade -1
 
+## make billing_upgrade_migration: команда для создания новой ревизии
+billing_upgrade_migration:
+	docker compose $(DOCKER_COMPOSE_PROD) run --rm --no-deps billing alembic revision --autogenerate -m "${MESSAGE}"
+
+## make billing_migrations: команда для запуска всех миграций бд
+billing_migrations:
+	docker compose $(DOCKER_COMPOSE_PROD) run --rm billing alembic upgrade head
+
+## make billing_downgrade_migration: команда для отката последней ревизии
+billing_downgrade_migration:
+	docker compose $(DOCKER_COMPOSE_PROD) run --rm billing alembic downgrade -1
+
+
 # Subscriptions
 
 subscription_dev:  # Собрать и запустить тестовый контейнер Subscriptions
 	docker compose $(DOCKER_COMPOSE_DEV) up --build -d subscription
+
+subscription_scheduler_dev: # Собрать и запустить тестовый контейнер Subscriptions scheduler
+	docker compose $(DOCKER_COMPOSE_DEV) up --build -d subscription_scheduler
+
+## make auth_upgrade_migration: команда для создания новой ревизии
+subscription_upgrade_migration:
+	docker compose $(DOCKER_COMPOSE_PROD) run --rm --no-deps auth alembic revision --autogenerate -m "${MESSAGE}"
+
+## make auth_migrations: команда для запуска всех миграций бд
+subscription_migrations:
+	docker compose $(DOCKER_COMPOSE_PROD) run --rm subscription alembic upgrade head
+
+## make auth_downgrade_migration: команда для отката последней ревизии
+subscription_downgrade_migration:
+	docker compose $(DOCKER_COMPOSE_PROD) run --rm subscription alembic downgrade -1
 
 
 # Django Admin
