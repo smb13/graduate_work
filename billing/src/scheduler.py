@@ -6,8 +6,11 @@ from apscheduler.triggers.cron import CronTrigger
 from jobs.check_pending_payments import check_pending_job
 from jobs.process_recurring_payments import process_recurring_job
 
+from main import lifespan
 
-def main() -> None:
+
+@lifespan(None)
+async def main() -> None:
     scheduler = AsyncIOScheduler()
     scheduler.add_job(
         check_pending_job,
@@ -20,8 +23,8 @@ def main() -> None:
     scheduler.start()
 
     with contextlib.suppress(KeyboardInterrupt, SystemExit):
-        asyncio.get_event_loop().run_forever()
+        asyncio.get_running_loop().run_forever()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

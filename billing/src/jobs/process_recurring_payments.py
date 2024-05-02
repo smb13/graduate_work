@@ -11,7 +11,6 @@ from redis import Redis
 
 from core.config import settings
 from core.enums import PaymentStatusEnum, TransactionKindEnum, TransactionProcessStateEnum
-from main import lifespan
 from schemas.transaction import PaymentInternal
 from services.base import ServiceError
 from services.payment import YooKassaPaymentService, get_yookassa_payment_service
@@ -21,7 +20,6 @@ from services.transaction import TransactionService, get_transaction_service
 logger = logging.getLogger(__name__)
 
 
-@lifespan(None)
 async def process_recurring() -> None:
     redis: Redis = await get_redis()
     yookassa: YooKassa = await get_yookassa()
